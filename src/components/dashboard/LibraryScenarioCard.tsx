@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { memo } from 'react'
 
 export interface LibraryScenario {
   id: string
@@ -22,7 +23,7 @@ interface LibraryScenarioCardProps {
   scenario: LibraryScenario
 }
 
-export function LibraryScenarioCard({ scenario }: LibraryScenarioCardProps) {
+// Move helper function outside component to prevent re-creation
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty.toLowerCase()) {
       case 'beginner':
@@ -37,6 +38,8 @@ export function LibraryScenarioCard({ scenario }: LibraryScenarioCardProps) {
     }
   }
 
+function LibraryScenarioCardComponent({ scenario }: LibraryScenarioCardProps) {
+
   return (
     <div className="hover-lift bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-card group relative h-full">
       {scenario.imageUrl ? (
@@ -45,7 +48,7 @@ export function LibraryScenarioCard({ scenario }: LibraryScenarioCardProps) {
             <span className="material-symbols-outlined text-[180px] text-white">handshake</span>
           </div>
           <div className="flex justify-between items-start z-10">
-            <span className="bg-white/20 backdrop-blur-md text-white px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider border border-white/10">
+            <span className="bg-white/20 text-white px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider border border-white/10">
               {scenario.category}
             </span>
             <button className="text-white/70 hover:text-white transition-colors">
@@ -123,4 +126,6 @@ export function LibraryScenarioCard({ scenario }: LibraryScenarioCardProps) {
     </div>
   )
 }
+
+export const LibraryScenarioCard = memo(LibraryScenarioCardComponent)
 

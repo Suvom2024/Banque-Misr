@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo, useMemo } from 'react'
 import { cn } from '@/lib/utils/cn'
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -8,10 +8,10 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   padding?: 'sm' | 'md'
 }
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(
+const InputComponent = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, icon, error, iconSize = 'xl', padding = 'md', ...props }, ref) => {
-    const iconClass = iconSize === 'lg' ? 'text-lg' : 'text-xl'
-    const paddingClass = padding === 'sm' ? 'py-2.5' : 'py-3'
+    const iconClass = useMemo(() => iconSize === 'lg' ? 'text-lg' : 'text-xl', [iconSize])
+    const paddingClass = useMemo(() => padding === 'sm' ? 'py-2.5' : 'py-3', [padding])
     
     return (
       <div className="relative">
@@ -39,7 +39,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     )
   }
 )
-Input.displayName = 'Input'
+InputComponent.displayName = 'Input'
 
-export { Input }
+export const Input = memo(InputComponent)
 

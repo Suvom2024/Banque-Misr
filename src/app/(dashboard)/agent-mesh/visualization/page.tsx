@@ -1,26 +1,21 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import { getUserDisplayName } from '@/lib/utils/profile'
-import { Sidebar } from '@/components/dashboard/Sidebar'
-import { MeshVisualizationClient } from './MeshVisualizationClient'
+import dynamic from 'next/dynamic'
+
+// Dynamically import ReactFlow-heavy component to reduce initial bundle size
+const MeshVisualizationClient = dynamic(() => import('./MeshVisualizationClient').then(mod => ({ default: mod.MeshVisualizationClient })), {
+  loading: () => (
+    <div className="flex-1 flex items-center justify-center bg-slate-50">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-bm-maroon mx-auto mb-4"></div>
+        <p className="text-bm-text-primary">Loading Visualization...</p>
+      </div>
+    </div>
+  ),
+  ssr: false,
+})
 
 export default async function MeshVisualizationPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/login')
-  }
-
   const userName = await getUserDisplayName()
-
-  return (
-    <div className="font-display bg-bm-light-grey text-bm-text-primary antialiased h-screen flex overflow-hidden">
-      <Sidebar activeItem="agent-mesh" />
-      <MeshVisualizationClient userName={userName} />
-    </div>
-  )
+  return <MeshVisualizationClient userName={userName} />
 }
 

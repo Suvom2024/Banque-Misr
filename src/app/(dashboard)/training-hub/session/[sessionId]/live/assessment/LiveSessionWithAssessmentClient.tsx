@@ -114,53 +114,57 @@ export function LiveSessionWithAssessmentClient({ userName, sessionId }: LiveSes
       <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-gradient-to-bl from-bm-grey/50 to-transparent pointer-events-none"></div>
       <LiveSessionHeader userName={userName} scenarioTitle={sessionData.scenarioTitle} />
 
-      <main className="flex-grow overflow-y-auto flex flex-col max-w-[1920px] mx-auto w-full">
-        <div className="p-6 pb-2">
-          <ScenarioProgressBar
-            currentTurn={sessionData.currentTurn}
-            totalTurns={sessionData.totalTurns}
-            isQuizActive={sessionData.isQuizActive}
-            quizNumber={sessionData.quizNumber}
-            totalQuizzes={sessionData.totalQuizzes}
-          />
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-4">
-            {/* Main Chat Area */}
-            <div className="lg:col-span-8 flex flex-col min-h-[600px] bg-white rounded-2xl shadow-card border border-bm-grey/60 relative overflow-hidden">
-              <RealTimeMetricsBar
-                sentiment={sessionData.metrics.sentiment}
-                pacing={sessionData.metrics.pacing}
-                clarity={sessionData.metrics.clarity}
-                quizScore={sessionData.metrics.quizScore}
+      <main className="flex-grow overflow-y-auto flex flex-col w-full">
+        <div className="px-6 lg:px-8 py-6 lg:py-8">
+          <div className="max-w-[1920px] mx-auto">
+            <div className="pb-2">
+              <ScenarioProgressBar
+                currentTurn={sessionData.currentTurn}
+                totalTurns={sessionData.totalTurns}
+                isQuizActive={sessionData.isQuizActive}
+                quizNumber={sessionData.quizNumber}
+                totalQuizzes={sessionData.totalQuizzes}
               />
 
-              <div className="flex-grow min-h-0 overflow-y-auto custom-scrollbar p-6 space-y-6 bg-gradient-to-b from-bm-light-grey/30 to-white relative">
-                <ChatInterface messages={sessionData.messages} />
-                <AssessmentActiveIndicator />
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-4">
+                {/* Main Chat Area */}
+                <div className="lg:col-span-8 flex flex-col min-h-[600px] bg-white rounded-2xl shadow-card border border-bm-grey/60 relative overflow-hidden">
+                  <RealTimeMetricsBar
+                    sentiment={sessionData.metrics.sentiment}
+                    pacing={sessionData.metrics.pacing}
+                    clarity={sessionData.metrics.clarity}
+                    quizScore={sessionData.metrics.quizScore}
+                  />
+
+                  <div className="flex-grow min-h-0 overflow-y-auto custom-scrollbar p-6 space-y-6 bg-gradient-to-b from-bm-light-grey/30 to-white relative">
+                    <ChatInterface messages={sessionData.messages} />
+                    <AssessmentActiveIndicator />
+                  </div>
+
+                  <SessionControls
+                    onRestartTurn={handleRestartTurn}
+                    onPause={handlePause}
+                    onEndSession={handleEndSession}
+                    isRestartDisabled={true}
+                  />
+                </div>
+
+                {/* Right Sidebar */}
+                <div className="lg:col-span-4 flex flex-col gap-6">
+                  <LiveAssessmentPanel
+                    question={sessionData.assessment.question}
+                    options={sessionData.assessment.options}
+                    timeLimit={sessionData.assessment.timeLimit}
+                    hint={sessionData.assessment.hint}
+                    onSubmit={handleSubmitAssessment}
+                  />
+                  <BehavioralAnalysisCard
+                    empathy={sessionData.behavioralAnalysis.empathy}
+                    directness={sessionData.behavioralAnalysis.directness}
+                    onViewFullAnalytics={handleViewFullAnalytics}
+                  />
+                </div>
               </div>
-
-              <SessionControls
-                onRestartTurn={handleRestartTurn}
-                onPause={handlePause}
-                onEndSession={handleEndSession}
-                isRestartDisabled={true}
-              />
-            </div>
-
-            {/* Right Sidebar */}
-            <div className="lg:col-span-4 flex flex-col gap-6">
-              <LiveAssessmentPanel
-                question={sessionData.assessment.question}
-                options={sessionData.assessment.options}
-                timeLimit={sessionData.assessment.timeLimit}
-                hint={sessionData.assessment.hint}
-                onSubmit={handleSubmitAssessment}
-              />
-              <BehavioralAnalysisCard
-                empathy={sessionData.behavioralAnalysis.empathy}
-                directness={sessionData.behavioralAnalysis.directness}
-                onViewFullAnalytics={handleViewFullAnalytics}
-              />
             </div>
           </div>
         </div>

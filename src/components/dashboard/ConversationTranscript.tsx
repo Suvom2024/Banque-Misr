@@ -1,5 +1,8 @@
 'use client'
 
+import { useRef, memo } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
+
 export interface TranscriptMessage {
   id: string
   speaker: 'ai-coach' | 'user'
@@ -18,7 +21,16 @@ interface ConversationTranscriptProps {
   userAvatar?: string
 }
 
-export function ConversationTranscript({ messages, userAvatar }: ConversationTranscriptProps) {
+function ConversationTranscriptComponent({ messages, userAvatar }: ConversationTranscriptProps) {
+  const parentRef = useRef<HTMLDivElement>(null)
+
+  // Virtualize messages for better scroll performance
+  const rowVirtualizer = useVirtualizer({
+    count: messages.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 120, // Approximate message height
+    overscan: 3, // Render 3 extra messages above/below viewport
+  })
   return (
     <section className="bg-white rounded-2xl shadow-card border border-bm-grey/60 p-6">
       <div className="flex items-center justify-between mb-4 border-b border-bm-grey/40 pb-4">
@@ -31,84 +43,111 @@ export function ConversationTranscript({ messages, userAvatar }: ConversationTra
           Audio Available
         </div>
       </div>
-      <div className="max-h-[400px] overflow-y-auto pr-4 space-y-5 custom-scrollbar">
-        {messages.map((message) => {
-          if (message.speaker === 'ai-coach') {
-            return (
-              <div key={message.id} className="flex gap-4 group">
-                <div className="w-10 h-10 rounded-full bg-bm-maroon flex-shrink-0 flex items-center justify-center shadow-md">
-                  <span className="material-symbols-outlined text-bm-gold text-xl">smart_toy</span>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold text-bm-text-secondary uppercase">{message.speakerLabel}</span>
-                    <span className="text-[10px] text-bm-text-subtle">{message.timestamp}</span>
+      <div ref={parentRef} className="max-h-[400px] overflow-y-auto pr-4 scroll-optimized custom-scrollbar">
+        <div
+          style={{
+            height: `${rowVirtualizer.getTotalSize()}px`,
+            width: '100%',
+            position: 'relative',
+          }}
+        >
+          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+            const message = messages[virtualRow.index]
+            
+            if (message.speaker === 'ai-coach') {
+              return (
+                <div
+                  key={message.id}
+                  className="flex gap-4 group absolute w-full"
+                  style={{
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <div className="w-10 h-10 rounded-full bg-bm-maroon flex-shrink-0 flex items-center justify-center shadow-md">
+                    <span className="material-symbols-outlined text-bm-gold text-xl">smart_toy</span>
                   </div>
-                  <div className="bg-bm-light-grey p-4 rounded-2xl rounded-tl-none text-bm-text-secondary text-sm leading-relaxed border border-bm-grey/50">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-bold text-bm-text-secondary uppercase">{message.speakerLabel}</span>
+                      <span className="text-[10px] text-bm-text-subtle">{message.timestamp}</span>
+                    </div>
+                    <div className="bg-bm-light-grey p-4 rounded-2xl rounded-tl-none text-bm-text-secondary text-sm leading-relaxed border border-bm-grey/50">
+                      {message.message}
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+
+            return (
+              <div
+                key={message.id}
+                className="flex gap-4 flex-row-reverse group absolute w-full"
+                style={{
+                  height: `${virtualRow.size}px`,
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                {userAvatar ? (
+                  <img
+                    alt="User"
+                    className="w-10 h-10 rounded-full object-cover shadow-md border border-white"
+                    src={userAvatar}
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-bm-grey flex items-center justify-center shadow-md border border-white">
+                    <span className="material-symbols-outlined text-bm-text-secondary">person</span>
+                  </div>
+                )}
+                <div className="flex-1 text-right">
+                  <div className="flex items-center justify-end gap-2 mb-1">
+                    <span className="text-[10px] text-bm-text-subtle">{message.timestamp}</span>
+                    <span className="text-xs font-bold text-bm-text-primary uppercase">You</span>
+                    {message.audioAvailable && (
+                      <button className="play-btn w-5 h-5 flex items-center justify-center text-bm-text-subtle transition-colors hover:text-bm-maroon">
+                        <span className="material-symbols-outlined text-lg">play_circle</span>
+                      </button>
+                    )}
+                  </div>
+                  <div
+                    className={`p-4 rounded-2xl rounded-tr-none text-left text-sm leading-relaxed shadow-sm border relative overflow-hidden ${
+                      message.feedback?.type === 'strength'
+                        ? 'bg-feedback-positive-bg text-bm-text-primary border-feedback-positive/10'
+                        : 'bg-feedback-negative-bg text-bm-text-primary border-feedback-negative/10'
+                    }`}
+                  >
+                    <div
+                      className={`absolute left-0 top-0 bottom-0 w-1 ${
+                        message.feedback?.type === 'strength' ? 'bg-feedback-positive' : 'bg-feedback-negative'
+                      }`}
+                    ></div>
                     {message.message}
+                    {message.feedback && (
+                      <div
+                        className={`mt-3 flex items-center gap-2 text-xs font-semibold border-t pt-2 ${
+                          message.feedback.type === 'strength'
+                            ? 'text-feedback-positive border-feedback-positive/10'
+                            : 'text-feedback-negative border-feedback-negative/10'
+                        }`}
+                      >
+                        <span className="material-symbols-filled text-sm">
+                          {message.feedback.type === 'strength' ? 'check_circle' : 'lightbulb'}
+                        </span>
+                        {message.feedback.type === 'strength' ? 'STRENGTH' : 'COACHING'}: {message.feedback.text}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             )
-          }
-
-          return (
-            <div key={message.id} className="flex gap-4 flex-row-reverse group">
-              {userAvatar ? (
-                <img
-                  alt="User"
-                  className="w-10 h-10 rounded-full object-cover shadow-md border border-white"
-                  src={userAvatar}
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-bm-grey flex items-center justify-center shadow-md border border-white">
-                  <span className="material-symbols-outlined text-bm-text-secondary">person</span>
-                </div>
-              )}
-              <div className="flex-1 text-right">
-                <div className="flex items-center justify-end gap-2 mb-1">
-                  <span className="text-[10px] text-bm-text-subtle">{message.timestamp}</span>
-                  <span className="text-xs font-bold text-bm-text-primary uppercase">You</span>
-                  {message.audioAvailable && (
-                    <button className="play-btn w-5 h-5 flex items-center justify-center text-bm-text-subtle transition-colors hover:text-bm-maroon">
-                      <span className="material-symbols-outlined text-lg">play_circle</span>
-                    </button>
-                  )}
-                </div>
-                <div
-                  className={`p-4 rounded-2xl rounded-tr-none text-left text-sm leading-relaxed shadow-sm border relative overflow-hidden ${
-                    message.feedback?.type === 'strength'
-                      ? 'bg-feedback-positive-bg text-bm-text-primary border-feedback-positive/10'
-                      : 'bg-feedback-negative-bg text-bm-text-primary border-feedback-negative/10'
-                  }`}
-                >
-                  <div
-                    className={`absolute left-0 top-0 bottom-0 w-1 ${
-                      message.feedback?.type === 'strength' ? 'bg-feedback-positive' : 'bg-feedback-negative'
-                    }`}
-                  ></div>
-                  {message.message}
-                  {message.feedback && (
-                    <div
-                      className={`mt-3 flex items-center gap-2 text-xs font-semibold border-t pt-2 ${
-                        message.feedback.type === 'strength'
-                          ? 'text-feedback-positive border-feedback-positive/10'
-                          : 'text-feedback-negative border-feedback-negative/10'
-                      }`}
-                    >
-                      <span className="material-symbols-filled text-sm">
-                        {message.feedback.type === 'strength' ? 'check_circle' : 'lightbulb'}
-                      </span>
-                      {message.feedback.type === 'strength' ? 'STRENGTH' : 'COACHING'}: {message.feedback.text}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )
-        })}
+          })}
+        </div>
       </div>
     </section>
   )
 }
+
+export const ConversationTranscript = memo(ConversationTranscriptComponent)
 

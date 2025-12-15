@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import { cn } from '@/lib/utils/cn'
 
 interface AuthCardProps {
@@ -8,7 +8,7 @@ interface AuthCardProps {
   className?: string
 }
 
-export function AuthCard({ children, title, subtitle, className }: AuthCardProps) {
+function AuthCardComponent({ children, title, subtitle, className }: AuthCardProps) {
   return (
     <div className={cn('glass-panel rounded-2xl p-5 md:p-6 lg:p-8 relative overflow-hidden group', className)}>
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-bm-maroon via-bm-gold to-bm-maroon"></div>
@@ -20,4 +20,6 @@ export function AuthCard({ children, title, subtitle, className }: AuthCardProps
     </div>
   )
 }
+
+export const AuthCard = memo(AuthCardComponent)
 

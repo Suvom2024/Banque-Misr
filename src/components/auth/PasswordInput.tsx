@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, forwardRef } from 'react'
+import React, { useState, forwardRef, memo, useCallback, useMemo } from 'react'
 import { InputProps } from '@/components/ui/Input'
 import { cn } from '@/lib/utils/cn'
 
@@ -9,7 +9,7 @@ export interface PasswordInputProps extends Omit<InputProps, 'type'> {
   iconName?: string
 }
 
-export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
+const PasswordInputComponent = forwardRef<HTMLInputElement, PasswordInputProps>(
   function PasswordInput({ 
     showStrength, 
     className, 
@@ -20,8 +20,12 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
     ...props 
   }, ref) {
     const [showPassword, setShowPassword] = useState(false)
-    const iconClass = iconSize === 'lg' ? 'text-lg' : 'text-xl'
-    const paddingClass = padding === 'sm' ? 'py-2.5' : 'py-3'
+    const iconClass = useMemo(() => iconSize === 'lg' ? 'text-lg' : 'text-xl', [iconSize])
+    const paddingClass = useMemo(() => padding === 'sm' ? 'py-2.5' : 'py-3', [padding])
+    
+    const togglePassword = useCallback(() => {
+      setShowPassword(prev => !prev)
+    }, [])
 
     return (
       <div className="relative">
@@ -44,7 +48,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
         <button
           type="button"
           className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
-          onClick={() => setShowPassword(!showPassword)}
+          onClick={togglePassword}
         >
           <span className={cn('material-symbols-outlined', iconClass)}>
             {showPassword ? 'visibility_off' : 'visibility'}
@@ -57,5 +61,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
     )
   }
 )
-PasswordInput.displayName = 'PasswordInput'
+PasswordInputComponent.displayName = 'PasswordInput'
+
+export const PasswordInput = memo(PasswordInputComponent)
 

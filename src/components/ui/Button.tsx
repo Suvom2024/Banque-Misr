@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import { cn } from '@/lib/utils/cn'
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -7,7 +7,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   icon?: string
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+const ButtonComponent = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', isLoading, icon, children, disabled, ...props }, ref) => {
     return (
       <button
@@ -43,9 +43,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     )
   }
 )
-Button.displayName = 'Button'
+ButtonComponent.displayName = 'Button'
 
-export { Button }
+export const Button = memo(ButtonComponent)
 
 
 

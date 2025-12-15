@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, memo, useCallback } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 
 export interface EmployeeMetric {
   id: string
@@ -23,6 +24,7 @@ interface EmployeeMetricsTableProps {
   onViewDetails?: (employeeId: string) => void
 }
 
+// Move default data outside component to prevent re-creation on every render
 const defaultEmployees: EmployeeMetric[] = [
   {
     id: '1',
@@ -70,23 +72,7 @@ const defaultEmployees: EmployeeMetric[] = [
   },
 ]
 
-export function EmployeeMetricsTable({
-  employees = defaultEmployees,
-  currentPage = 1,
-  totalPages = 6,
-  onPageChange,
-  onExportCSV,
-  onViewDetails,
-}: EmployeeMetricsTableProps) {
-  const [page, setPage] = useState(currentPage)
-
-  const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setPage(newPage)
-      onPageChange?.(newPage)
-    }
-  }
-
+// Helper functions outside component for better performance
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'text-bm-success'
     if (score >= 80) return 'text-bm-warning'
@@ -109,6 +95,36 @@ export function EmployeeMetricsTable({
     if (skill === 'None') return 'bg-green-50 border-green-200 text-green-700'
     return 'bg-orange-50 border-orange-200 text-orange-700'
   }
+
+function EmployeeMetricsTableComponent({
+  employees = defaultEmployees,
+  currentPage = 1,
+  totalPages = 6,
+  onPageChange,
+  onExportCSV,
+  onViewDetails,
+}: EmployeeMetricsTableProps) {
+  const [page, setPage] = useState(currentPage)
+  const parentRef = useRef<HTMLTableSectionElement>(null)
+
+  // Virtualize table rows for better performance
+  const rowVirtualizer = useVirtualizer({
+    count: employees.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 60, // Approximate row height
+    overscan: 5, // Render 5 extra rows above/below viewport
+  })
+
+  const handlePageChange = useCallback((newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPage(newPage)
+      onPageChange?.(newPage)
+    }
+  }, [totalPages, onPageChange])
+
+  const handleViewDetails = useCallback((employeeId: string) => {
+    onViewDetails?.(employeeId)
+  }, [onViewDetails])
 
   return (
     <section>
@@ -135,7 +151,7 @@ export function EmployeeMetricsTable({
       <div className="bg-white rounded-xl shadow-card border border-bm-grey overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
-            <thead>
+            <thead className="sticky top-0 z-10">
               <tr className="bg-bm-light-grey border-b border-bm-grey">
                 <th className="p-5 text-xs font-bold text-bm-text-subtle uppercase tracking-wider">Employee</th>
                 <th className="p-5 text-xs font-bold text-bm-text-subtle uppercase tracking-wider">Avg. Score</th>
@@ -146,9 +162,24 @@ export function EmployeeMetricsTable({
                 <th className="p-5 text-xs font-bold text-bm-text-subtle uppercase tracking-wider text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-bm-grey/50">
-              {employees.map((employee) => (
-                <tr key={employee.id} className="group hover:bg-bm-light-grey/40 transition-colors">
+            <tbody
+              ref={parentRef}
+              className="divide-y divide-bm-grey/50 relative"
+              style={{
+                height: `${rowVirtualizer.getTotalSize()}px`,
+              }}
+            >
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const employee = employees[virtualRow.index]
+                return (
+                  <tr
+                    key={employee.id}
+                    className="group hover:bg-bm-light-grey/40 transition-colors absolute w-full"
+                    style={{
+                      height: `${virtualRow.size}px`,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  >
                   <td className="p-5">
                     <div className="flex items-center gap-3">
                       <div className={`h-8 w-8 rounded-full ${employee.avatarColor} flex items-center justify-center text-xs font-bold`}>
@@ -189,13 +220,14 @@ export function EmployeeMetricsTable({
                   <td className="p-5 text-right">
                     <button
                       className="text-bm-text-subtle hover:text-bm-maroon p-1.5 rounded-full hover:bg-white transition-all shadow-sm opacity-0 group-hover:opacity-100"
-                      onClick={() => onViewDetails?.(employee.id)}
+                        onClick={() => handleViewDetails(employee.id)}
                     >
                       <span className="material-symbols-outlined text-xl">visibility</span>
                     </button>
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -223,4 +255,6 @@ export function EmployeeMetricsTable({
     </section>
   )
 }
+
+export const EmployeeMetricsTable = memo(EmployeeMetricsTableComponent)
 

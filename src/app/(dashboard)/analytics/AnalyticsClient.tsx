@@ -1,6 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import { useCallback, memo } from 'react'
 import { AnalyticsHeader } from '@/components/dashboard/AnalyticsHeader'
 import { AnalyticsFilters } from '@/components/dashboard/AnalyticsFilters'
 
@@ -36,34 +37,35 @@ interface AnalyticsClientProps {
   userAvatar?: string
 }
 
-export function AnalyticsClient({ userName, userRole, userAvatar }: AnalyticsClientProps) {
-  const handleFilterChange = (filters: { employee: string; timePeriod: string; scenario: string }) => {
+function AnalyticsClientComponent({ userName, userRole, userAvatar }: AnalyticsClientProps) {
+  const handleFilterChange = useCallback((filters: { employee: string; timePeriod: string; scenario: string }) => {
     // Handle filter changes - implement filtering logic here
-  }
+  }, [])
 
-  const handleSavePreset = () => {
+  const handleSavePreset = useCallback(() => {
     // Handle save preset - implement preset saving logic here
-  }
+  }, [])
 
-  const handleApplyFilters = () => {
+  const handleApplyFilters = useCallback(() => {
     // Handle apply filters - implement filter application logic here
-  }
+  }, [])
 
-  const handleExportCSV = () => {
+  const handleExportCSV = useCallback(() => {
     // Handle CSV export - implement CSV generation and download logic here
-  }
+  }, [])
 
-  const handleViewDetails = (employeeId: string) => {
+  const handleViewDetails = useCallback((employeeId: string) => {
     // Handle view details - navigate to employee detail page
     window.location.href = `/analytics/employee/${employeeId}`
-  }
+  }, [])
 
   return (
     <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-bm-light-grey">
       <AnalyticsHeader userName={userName} userRole={userRole} userAvatar={userAvatar} />
 
-      <main className="flex-grow overflow-y-auto p-6 lg:p-8 scroll-smooth">
-        <div className="max-w-[1600px] mx-auto space-y-8">
+      <main className="flex-grow overflow-y-auto scroll-smooth">
+        <div className="px-6 lg:px-8 py-6 lg:py-8">
+          <div className="max-w-[1600px] mx-auto space-y-8">
           {/* Filters */}
           <AnalyticsFilters
             onFilterChange={handleFilterChange}
@@ -97,9 +99,12 @@ export function AnalyticsClient({ userName, userRole, userAvatar }: AnalyticsCli
             onExportCSV={handleExportCSV}
             onViewDetails={handleViewDetails}
           />
+          </div>
         </div>
       </main>
     </div>
   )
 }
+
+export const AnalyticsClient = memo(AnalyticsClientComponent)
 

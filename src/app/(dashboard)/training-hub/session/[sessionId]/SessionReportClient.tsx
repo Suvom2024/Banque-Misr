@@ -172,8 +172,10 @@ export function SessionReportClient({ userName, sessionId }: SessionReportClient
     <div className="flex-1 flex flex-col h-screen overflow-hidden bg-bm-light-grey">
       <SessionReportHeader userName={userName} sessionTitle={sessionData.title} />
 
-      <main className="flex-grow overflow-y-auto p-8 max-w-7xl mx-auto w-full">
-        <div className="grid grid-cols-12 gap-8">
+      <main className="flex-grow overflow-y-auto w-full">
+        <div className="px-6 lg:px-8 py-6 lg:py-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-12 gap-8">
           {/* Left Column - Main Content */}
           <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
             {/* AI Executive Summary */}
@@ -213,6 +215,8 @@ export function SessionReportClient({ userName, sessionId }: SessionReportClient
               onExploreScenarios={handleExploreScenarios}
               onShareReport={handleShareReport}
             />
+          </div>
+            </div>
           </div>
         </div>
       </main>

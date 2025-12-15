@@ -83,14 +83,16 @@ export function LiveSessionClient({ userName, sessionId }: LiveSessionClientProp
       <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-gradient-to-bl from-bm-grey/50 to-transparent pointer-events-none"></div>
       <LiveSessionHeader userName={userName} scenarioTitle={sessionData.scenarioTitle} />
 
-      <main className="flex-grow overflow-y-auto flex flex-col max-w-[1920px] mx-auto w-full">
-        <div className="p-6 pb-2">
+      <main className="flex-grow overflow-y-auto flex flex-col w-full">
+        <div className="px-6 lg:px-8 py-6 lg:py-8">
+          <div className="max-w-[1920px] mx-auto">
+            <div>
           <ScenarioProgressBar
             currentTurn={sessionData.currentTurn}
             totalTurns={sessionData.totalTurns}
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Main Chat Area */}
             <div className="lg:col-span-8 flex flex-col min-h-[600px] bg-white rounded-2xl shadow-card border border-bm-grey/60 relative overflow-hidden">
               <RealTimeMetricsBar
@@ -116,6 +118,8 @@ export function LiveSessionClient({ userName, sessionId }: LiveSessionClientProp
                 directness={sessionData.behavioralAnalysis.directness}
                 onViewFullAnalytics={handleViewFullAnalytics}
               />
+            </div>
+          </div>
             </div>
           </div>
         </div>

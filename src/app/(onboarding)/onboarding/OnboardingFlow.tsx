@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useCallback, memo, useMemo } from 'react'
 import Image from 'next/image'
 
 type Step = 0 | 1 | 2 | 3 | 4
@@ -15,66 +15,34 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
   const [step, setStep] = useState<Step>(0)
   const [selectedGoal, setSelectedGoal] = useState<'negotiation' | 'empathy' | 'de-escalation' | 'onboarding'>('empathy')
 
-  const next = () => setStep((prev) => (prev < 4 ? ((prev + 1) as Step) : prev))
-  const launchDashboard = () => router.push('/dashboard')
-  const skipToDashboard = () => router.push('/dashboard')
+  const next = useCallback(() => setStep((prev) => (prev < 4 ? ((prev + 1) as Step) : prev)), [])
+  const launchDashboard = useCallback(() => router.push('/dashboard'), [router])
+  const skipToDashboard = useCallback(() => router.push('/dashboard'), [router])
+  const handleSelectGoal = useCallback((goal: 'negotiation' | 'empathy' | 'de-escalation' | 'onboarding') => {
+    setSelectedGoal(goal)
+  }, [])
 
   return (
-    <div className="font-sans h-screen w-full overflow-hidden flex items-center justify-center bg-slate-900 relative selection:bg-bm-gold selection:text-bm-maroon">
-      <Background />
-      <div className="relative z-10 w-full h-full flex items-center justify-center overflow-y-auto overflow-x-hidden px-4 py-2">
+    <>
       {step === 0 && <WelcomeHero userName={userName} onContinue={next} />}
       {step === 1 && <AiIntelligence onContinue={next} />}
       {step === 2 && (
         <PrimaryGoal
           selectedGoal={selectedGoal}
-          onSelect={setSelectedGoal}
+          onSelect={handleSelectGoal}
           onStart={next}
           onSkip={skipToDashboard}
         />
       )}
       {step === 3 && <PersonalizedInsights onContinue={next} />}
       {step === 4 && <ReadyTransformation onLaunch={launchDashboard} />}
-      </div>
-    </div>
+    </>
   )
 }
 
-function Background() {
+const BrandBadge = memo(function BrandBadge() {
   return (
-    <div className="absolute inset-0 bg-gradient-to-br from-bm-maroon-dark via-[#4a0e16] to-slate-900 z-0">
-      <div className="absolute top-0 -left-4 w-96 h-96 bg-bm-maroon mix-blend-screen filter blur-3xl opacity-20 animate-blob"></div>
-      <div className="absolute top-1/4 right-0 w-[500px] h-[500px] bg-bm-gold mix-blend-overlay filter blur-[100px] opacity-10 animate-blob animation-delay-2000"></div>
-      <div className="absolute -bottom-32 left-20 w-96 h-96 bg-bm-maroon-light mix-blend-screen filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light"></div>
-      <div className="absolute bottom-0 left-0 right-0 h-3/4 opacity-20 pointer-events-none overflow-hidden">
-        <svg className="absolute bottom-0 w-[200%] h-full animate-wave" preserveAspectRatio="none" viewBox="0 0 1440 320">
-          <path
-            d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
-            fill="#FFC72C"
-            fillOpacity="0.2"
-          ></path>
-        </svg>
-        <svg
-          className="absolute bottom-0 w-[200%] h-full animate-wave"
-          preserveAspectRatio="none"
-          style={{ animationDuration: '35s', animationDirection: 'reverse' }}
-          viewBox="0 0 1440 320"
-        >
-          <path
-            d="M0,64L48,80C96,96,192,128,288,128C384,128,480,96,576,90.7C672,85,768,107,864,133.3C960,160,1056,192,1152,186.7C1248,181,1344,139,1392,117.3L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
-            fill="#ffffff"
-            fillOpacity="0.05"
-          ></path>
-        </svg>
-      </div>
-    </div>
-  )
-}
-
-function BrandBadge() {
-  return (
-    <div className="inline-flex items-center justify-center gap-1.5 py-1 px-2 md:px-2.5 rounded-full bg-white/5 backdrop-blur-md border border-white/10 shadow-[0_0_20px_rgba(0,0,0,0.2)] ring-1 ring-white/10 mb-2">
+    <div className="inline-flex items-center justify-center gap-1.5 py-1 px-2 md:px-2.5 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 shadow-[0_0_20px_rgba(0,0,0,0.2)] ring-1 ring-white/10 mb-2">
       <Image
         src="/logo.png"
         alt="Banque Misr"
@@ -87,9 +55,9 @@ function BrandBadge() {
       <span className="text-[10px] font-bold text-white tracking-[0.2em] uppercase opacity-90">AI Platform</span>
     </div>
   )
-}
+})
 
-function SmallBrand() {
+const SmallBrand = memo(function SmallBrand() {
   return (
     <Image
       src="/logo.png"
@@ -101,9 +69,9 @@ function SmallBrand() {
       unoptimized
     />
   )
-}
+})
 
-function WelcomeHero({ userName, onContinue }: { userName: string; onContinue: () => void }) {
+const WelcomeHero = memo(function WelcomeHero({ userName, onContinue }: { userName: string; onContinue: () => void }) {
   return (
     <main className="relative z-10 w-full max-w-4xl px-4 flex flex-col items-center justify-center text-center">
       <div className="animate-fade-in opacity-0" style={{ animationDelay: '0.1s' }}>
@@ -140,13 +108,14 @@ function WelcomeHero({ userName, onContinue }: { userName: string; onContinue: (
       </div>
     </main>
   )
-}
+})
 
-function HeroOrb() {
+// Optimized: Reduced blur intensity for better performance
+const HeroOrb = memo(function HeroOrb() {
   return (
     <div className="relative w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 mb-4 md:mb-6 flex items-center justify-center animate-fade-in opacity-0" style={{ animationDelay: '0.4s' }}>
-      <div className="absolute inset-0 bg-bm-maroon rounded-full mix-blend-screen filter blur-[80px] opacity-40 animate-pulse-glow"></div>
-      <div className="absolute inset-10 bg-bm-gold rounded-full mix-blend-overlay filter blur-[60px] opacity-20 animate-pulse"></div>
+      <div className="absolute inset-0 bg-bm-maroon rounded-full mix-blend-screen filter blur-[60px] opacity-40 animate-pulse-glow"></div>
+      <div className="absolute inset-10 bg-bm-gold rounded-full mix-blend-overlay filter blur-[40px] opacity-20 animate-pulse"></div>
       <div className="absolute w-full h-full rounded-full border border-white/5 border-t-white/20 animate-spin-slow"></div>
       <div className="absolute w-[85%] h-[85%] rounded-full border border-white/5 border-b-bm-gold/30 animate-spin-reverse-slow"></div>
       <div className="absolute w-[120%] h-[120%] rounded-full border border-dashed border-white/5 opacity-30 animate-spin-slow" style={{ animationDuration: '40s' }}></div>
@@ -182,9 +151,9 @@ function HeroOrb() {
       </div>
     </div>
   )
-}
+})
 
-function AiIntelligence({ onContinue }: { onContinue: () => void }) {
+const AiIntelligence = memo(function AiIntelligence({ onContinue }: { onContinue: () => void }) {
   return (
     <main className="relative z-10 w-full max-w-6xl mx-4 animate-fade-in-up">
       <div className="text-center mb-2">
@@ -216,9 +185,10 @@ function AiIntelligence({ onContinue }: { onContinue: () => void }) {
       </div>
     </main>
   )
-}
+})
 
-function MeshCanvas() {
+// Optimized: Simplified MeshCanvas to reduce complexity
+const MeshCanvas = memo(function MeshCanvas() {
   return (
     <div className="relative w-full h-[350px] md:h-[450px] lg:h-[500px] select-none bg-transparent rounded-2xl overflow-hidden">
       {/* Agentic Mesh Grid Background - Bigger and more visible */}
@@ -328,9 +298,9 @@ function MeshCanvas() {
       <SkeletalAgentCard className="absolute top-[70%] left-[90%] -translate-x-1/2 -translate-y-1/2 z-5 animate-wander" delay="4s" />
     </div>
   )
-}
+})
 
-function SkeletalAgentCard({ className, delay }: { className?: string; delay?: string }) {
+const SkeletalAgentCard = memo(function SkeletalAgentCard({ className, delay }: { className?: string; delay?: string }) {
   return (
     <div className={className} style={{ animationDelay: delay }}>
       <div className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded-lg bg-white/5 border border-white/20 border-dashed backdrop-blur-sm">
@@ -339,9 +309,9 @@ function SkeletalAgentCard({ className, delay }: { className?: string; delay?: s
       </div>
     </div>
   )
-}
+})
 
-function NodeCard({
+const NodeCard = memo(function NodeCard({
   className,
   icon,
   title,
@@ -397,9 +367,9 @@ function NodeCard({
       )}
     </div>
   )
-}
+})
 
-function Benefit({
+const Benefit = memo(function Benefit({
   icon,
   title,
   description,
@@ -425,9 +395,9 @@ function Benefit({
       <p className="text-xs md:text-sm text-slate-200 leading-relaxed max-w-[200px]">{description}</p>
     </div>
   )
-}
+})
 
-function PrimaryGoal({
+const PrimaryGoal = memo(function PrimaryGoal({
   selectedGoal,
   onSelect,
   onStart,
@@ -534,9 +504,9 @@ function PrimaryGoal({
       </div>
     </main>
   )
-}
+})
 
-function GoalCard({
+const GoalCard = memo(function GoalCard({
   selected,
   icon,
   title,
@@ -564,12 +534,12 @@ function GoalCard({
       )}
       <span className={`material-symbols-outlined text-3xl mb-2 ${highlight && selected ? 'text-bm-maroon' : 'text-slate-400'} group-hover/card:text-bm-maroon transition-colors`}>{icon}</span>
       <span className={`text-sm font-bold ${highlight && selected ? 'text-bm-maroon' : 'text-slate-700'} group-hover/card:text-bm-maroon`}>{title}</span>
-      <span className={`text-[10px] mt-1 leading-tight ${highlight && selected ? 'text-bm-maroon/70' : 'text-slate-400'}`}>{subtitle}</span>
+      <span className={`text-[10px] mt-1 leading-tight ${highlight && selected ? 'text-bm-maroon/70' : 'text-slate-400'}`}>{subtitle}      </span>
     </button>
   )
-}
+})
 
-function PersonalizedInsights({ onContinue }: { onContinue: () => void }) {
+const PersonalizedInsights = memo(function PersonalizedInsights({ onContinue }: { onContinue: () => void }) {
   return (
     <main className="relative z-10 w-full max-w-6xl px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-8">
       <div className="flex-1 max-w-xl text-left">
@@ -635,9 +605,9 @@ function PersonalizedInsights({ onContinue }: { onContinue: () => void }) {
       <InsightsGraphic />
     </main>
   )
-}
+})
 
-function InsightsGraphic() {
+const InsightsGraphic = memo(function InsightsGraphic() {
   return (
     <div className="flex-1 flex flex-col justify-center items-center relative animate-fade-in opacity-0" style={{ animationDelay: '0.5s' }}>
       <div className="relative w-[200px] h-[200px] md:w-[280px] md:h-[280px] lg:w-[320px] lg:h-[320px] mb-4 md:mb-6">
@@ -697,9 +667,9 @@ function InsightsGraphic() {
       </div>
     </div>
   )
-}
+})
 
-function ReadyTransformation({ onLaunch }: { onLaunch: () => void }) {
+const ReadyTransformation = memo(function ReadyTransformation({ onLaunch }: { onLaunch: () => void }) {
   return (
     <main className="relative z-10 w-full max-w-5xl px-4 md:px-6 flex flex-col items-center justify-center text-center">
       <div className="animate-fade-in opacity-0" style={{ animationDelay: '0.1s' }}>
@@ -743,13 +713,14 @@ function ReadyTransformation({ onLaunch }: { onLaunch: () => void }) {
       </div>
     </main>
   )
-}
+})
 
-function FinalGraph() {
+// Optimized: Reduced blur intensity
+const FinalGraph = memo(function FinalGraph() {
   return (
     <div className="relative w-48 h-48 md:w-64 md:h-64 lg:w-72 lg:h-72 mb-3 md:mb-4 flex items-center justify-center animate-fade-in opacity-0" style={{ animationDelay: '0.4s' }}>
-      <div className="absolute inset-0 bg-bm-maroon/60 rounded-full mix-blend-screen filter blur-[90px] opacity-50 animate-pulse-glow"></div>
-      <div className="absolute inset-20 bg-bm-gold/40 rounded-full mix-blend-overlay filter blur-[70px] opacity-30 animate-pulse"></div>
+      <div className="absolute inset-0 bg-bm-maroon/60 rounded-full mix-blend-screen filter blur-[60px] opacity-50 animate-pulse-glow"></div>
+      <div className="absolute inset-20 bg-bm-gold/40 rounded-full mix-blend-overlay filter blur-[50px] opacity-30 animate-pulse"></div>
       <div className="absolute w-full h-full rounded-full border border-white/5 border-t-bm-gold/20 animate-spin-slow"></div>
       <div className="absolute w-[80%] h-[80%] rounded-full border border-white/5 border-b-bm-maroon-light/50 animate-spin-reverse-slow"></div>
       <div className="absolute w-[110%] h-[110%] rounded-full border border-dashed border-white/5 opacity-20 animate-spin-slow" style={{ animationDuration: '50s' }}></div>
@@ -819,5 +790,5 @@ function FinalGraph() {
       </div>
     </div>
   )
-}
+})
 

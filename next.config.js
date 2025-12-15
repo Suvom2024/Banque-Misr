@@ -2,7 +2,13 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: [],
+    domains: ['lh3.googleusercontent.com', 'grainy-gradients.vercel.app'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
@@ -20,7 +26,7 @@ const nextConfig = {
   poweredByHeader: false,
   // Experimental features for better performance
   experimental: {
-    optimizePackageImports: ['apexcharts', 'react-apexcharts'],
+    optimizePackageImports: ['apexcharts', 'react-apexcharts', 'reactflow'],
   },
   // Webpack optimizations
   webpack: (config, { isServer, dev }) => {
@@ -61,6 +67,13 @@ const nextConfig = {
             apexcharts: {
               name: 'apexcharts',
               test: /[\\/]node_modules[\\/](apexcharts|react-apexcharts)[\\/]/,
+              chunks: 'all',
+              priority: 30,
+            },
+            // Separate chunk for ReactFlow (heavy library ~200KB+)
+            reactflow: {
+              name: 'reactflow',
+              test: /[\\/]node_modules[\\/]reactflow[\\/]/,
               chunks: 'all',
               priority: 30,
             },

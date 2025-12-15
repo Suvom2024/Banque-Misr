@@ -1,5 +1,7 @@
 'use client'
 
+import { memo } from 'react'
+
 interface GoalCardProps {
   id: string
   title: string
@@ -13,7 +15,7 @@ interface GoalCardProps {
   onViewProgress?: (id: string) => void
 }
 
-export function GoalCard({
+function GoalCardComponent({
   id,
   title,
   targetDate,
@@ -111,4 +113,6 @@ export function GoalCard({
     </div>
   )
 }
+
+export const GoalCard = memo(GoalCardComponent)
 

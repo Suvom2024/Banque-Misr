@@ -1,5 +1,7 @@
 'use client'
 
+import { memo } from 'react'
+
 const brandColors: Record<string, string> = {
   'brand-teams': '#6264A7',
   'brand-outlook': '#0078D4',
@@ -44,7 +46,7 @@ interface IntegrationCardProps {
   onSettings?: (integrationId: string) => void
 }
 
-export function IntegrationCard({
+function IntegrationCardComponent({
   integration,
   onToggle,
   onConnect,
@@ -142,3 +144,5 @@ export function IntegrationCard({
     </div>
   )
 }
+
+export const IntegrationCard = memo(IntegrationCardComponent)

@@ -99,31 +99,35 @@ export function DevelopmentGoalsClient({ userName, userRole, userAvatar }: Devel
       <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-gradient-to-bl from-bm-grey/50 to-transparent pointer-events-none"></div>
       <DevelopmentGoalsHeader userName={userName} userRole={userRole} userAvatar={userAvatar} />
 
-      <main className="flex-grow p-8 overflow-y-auto custom-scrollbar max-w-[1600px] mx-auto w-full space-y-8">
-        {/* Define New Goal */}
-        <DefineNewGoalCard onGenerateGoal={handleGenerateGoal} />
+      <main className="flex-grow overflow-y-auto custom-scrollbar w-full">
+        <div className="px-6 lg:px-8 py-6 lg:py-8">
+          <div className="max-w-[1600px] mx-auto space-y-8">
+            {/* Define New Goal */}
+            <DefineNewGoalCard onGenerateGoal={handleGenerateGoal} />
 
-        {/* Active Goals */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in-up animate-delay-100">
-          {goals.map((goal) => (
-            <GoalCard
-              key={goal.id}
-              {...goal}
-              onEdit={handleEditGoal}
-              onViewProgress={handleViewProgress}
+            {/* Active Goals */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in-up animate-delay-100">
+              {goals.map((goal) => (
+                <GoalCard
+                  key={goal.id}
+                  {...goal}
+                  onEdit={handleEditGoal}
+                  onViewProgress={handleViewProgress}
+                />
+              ))}
+            </div>
+
+            {/* Recommended Training Path */}
+            <RecommendedTrainingPathCard
+              modules={defaultTrainingModules}
+              onCustomizePath={handleCustomizePath}
+              onStartModule={handleStartModule}
             />
-          ))}
+
+            {/* Completed Goals */}
+            <CompletedGoalsSection goals={defaultCompletedGoals} />
+          </div>
         </div>
-
-        {/* Recommended Training Path */}
-        <RecommendedTrainingPathCard
-          modules={defaultTrainingModules}
-          onCustomizePath={handleCustomizePath}
-          onStartModule={handleStartModule}
-        />
-
-        {/* Completed Goals */}
-        <CompletedGoalsSection goals={defaultCompletedGoals} />
       </main>
     </div>
   )

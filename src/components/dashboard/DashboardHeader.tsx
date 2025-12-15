@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import Image from 'next/image'
 
 interface DashboardHeaderProps {
@@ -8,9 +9,9 @@ interface DashboardHeaderProps {
   userAvatar?: string
 }
 
-export function DashboardHeader({ userName, userRole = 'Branch Manager', userAvatar }: DashboardHeaderProps) {
+function DashboardHeaderComponent({ userName, userRole = 'Branch Manager', userAvatar }: DashboardHeaderProps) {
   return (
-    <header className="bg-white/80 backdrop-blur-md sticky top-0 z-30 border-b border-bm-grey-dark/30 shadow-sm">
+    <header className="bg-white/80 backdrop-blur-sm sticky top-0 z-30 border-b border-bm-grey-dark/30 shadow-sm">
       <div className="w-full px-8 py-5 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-extrabold text-bm-maroon tracking-tighter leading-tight">Welcome back, {userName}</h1>
@@ -59,6 +60,8 @@ export function DashboardHeader({ userName, userRole = 'Branch Manager', userAva
     </header>
   )
 }
+
+export const DashboardHeader = memo(DashboardHeaderComponent)
 
 
 

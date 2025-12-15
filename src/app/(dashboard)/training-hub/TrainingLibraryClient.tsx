@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useCallback, memo } from 'react'
 import { TrainingLibraryHeader } from '@/components/dashboard/TrainingLibraryHeader'
 import { FeaturedScenarioHero } from '@/components/dashboard/FeaturedScenarioHero'
 import { CategoryFilterChips, CategoryFilter } from '@/components/dashboard/CategoryFilterChips'
@@ -15,6 +15,7 @@ interface TrainingLibraryClientProps {
   userAvatar?: string
 }
 
+// Move all static data outside component to prevent re-creation on every render
 const defaultScenarios: LibraryScenario[] = [
   {
     id: '1',
@@ -96,39 +97,45 @@ const defaultSkills = [
   { id: '5', label: 'Product Knowledge' },
 ]
 
-export function TrainingLibraryClient({ userName, userRole, userAvatar }: TrainingLibraryClientProps) {
+function TrainingLibraryClientComponent({ userName, userRole, userAvatar }: TrainingLibraryClientProps) {
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<CategoryFilter>('all')
 
-  const filteredScenarios =
+  // Memoize filtered scenarios to prevent recalculation on every render
+  const filteredScenarios = useMemo(
+    () =>
     activeFilter === 'all'
       ? defaultScenarios
       : activeFilter === 'recommended'
         ? defaultScenarios.filter((s) => s.isRecommended)
-        : defaultScenarios.filter((s) => s.category.toLowerCase().replace(/\s+/g, '-') === activeFilter)
+          : defaultScenarios.filter((s) => s.category.toLowerCase().replace(/\s+/g, '-') === activeFilter),
+    [activeFilter]
+  )
 
-  const handleExploreFeatured = () => {
+  // Memoize event handlers to prevent re-creation on every render
+  const handleExploreFeatured = useCallback(() => {
     router.push('/training-hub/session/featured/live')
-  }
+  }, [router])
 
-  const handlePreviewFeatured = () => {
+  const handlePreviewFeatured = useCallback(() => {
     console.log('Preview featured scenario')
-  }
+  }, [])
 
-  const handleViewAllLearningPath = () => {
+  const handleViewAllLearningPath = useCallback(() => {
     console.log('View all learning paths')
-  }
+  }, [])
 
-  const handleViewAnalysis = () => {
+  const handleViewAnalysis = useCallback(() => {
     router.push('/analytics')
-  }
+  }, [router])
 
   return (
     <div className="flex-1 flex flex-col h-screen overflow-hidden bg-bm-light-grey">
       <TrainingLibraryHeader userName={userName} userRole={userRole} userAvatar={userAvatar} />
 
-      <main className="flex-grow overflow-y-auto overflow-x-hidden p-6 lg:p-8 smooth-scroll">
-        <div className="max-w-[1400px] mx-auto space-y-8">
+      <main className="flex-grow overflow-y-auto overflow-x-hidden smooth-scroll">
+        <div className="px-6 lg:px-8 py-6 lg:py-8">
+          <div className="max-w-[1400px] mx-auto space-y-8">
           {/* Featured Hero Section */}
           <div className="w-full">
             <FeaturedScenarioHero
@@ -162,10 +169,13 @@ export function TrainingLibraryClient({ userName, userRole, userAvatar }: Traini
               <AISkillFocusSidebar skills={defaultSkills} onViewAnalysis={handleViewAnalysis} />
             </aside>
           </section>
+          </div>
+          <div className="h-12"></div>
         </div>
-        <div className="h-12"></div>
       </main>
     </div>
   )
 }
+
+export const TrainingLibraryClient = memo(TrainingLibraryClientComponent)
 

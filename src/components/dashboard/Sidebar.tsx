@@ -1,8 +1,9 @@
 'use client'
 
+import { memo, useCallback, useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 
 type ActiveItem = 'dashboard' | 'training-hub' | 'development-goals' | 'analytics' | 'history' | 'integrations' | 'settings' | 'agent-mesh'
 
@@ -10,45 +11,35 @@ interface SidebarProps {
   activeItem?: ActiveItem
 }
 
-export function Sidebar({ activeItem = 'dashboard' }: SidebarProps) {
-  // #region agent log
-  useEffect(() => {
-    const checkIconStyles = () => {
-      const iconElements = document.querySelectorAll('.material-symbols-outlined');
-      if (iconElements.length > 0) {
-        const firstIcon = iconElements[0] as HTMLElement;
-        const computedStyle = window.getComputedStyle(firstIcon);
-        const fontFamily = computedStyle.fontFamily;
-        const fontSize = computedStyle.fontSize;
-        const fontWeight = computedStyle.fontWeight;
-        const textContent = firstIcon.textContent;
-        
-        fetch('http://127.0.0.1:7243/ingest/2cc1acae-5f16-4bda-901f-ffdd990c9b0e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Sidebar.tsx:useEffect',message:'Icon element computed styles check',data:{iconCount:iconElements.length,fontFamily,fontSize,fontWeight,textContent,hasMaterialSymbolsInFont:fontFamily.includes('Material Symbols')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-      } else {
-        fetch('http://127.0.0.1:7243/ingest/2cc1acae-5f16-4bda-901f-ffdd990c9b0e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Sidebar.tsx:useEffect',message:'No icon elements found',data:{iconCount:0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-      }
-    };
-    
-    // Check immediately and after a delay
-    setTimeout(checkIconStyles, 100);
-    setTimeout(checkIconStyles, 1000);
-  }, []);
-  // #endregion agent log
+function SidebarComponent({ activeItem }: SidebarProps) {
+  const pathname = usePathname()
   
-  const getLinkClass = (item: ActiveItem) => {
+  // Determine active item from pathname if not provided
+  const currentActiveItem = useMemo<ActiveItem>(() => {
+    if (activeItem) return activeItem
+    if (pathname.startsWith('/dashboard') && pathname === '/dashboard') return 'dashboard'
+    if (pathname.startsWith('/training-hub')) return 'training-hub'
+    if (pathname.startsWith('/agent-mesh')) return 'agent-mesh'
+    if (pathname.startsWith('/development-goals')) return 'development-goals'
+    if (pathname.startsWith('/analytics')) return 'analytics'
+    if (pathname.startsWith('/integrations')) return 'integrations'
+    return 'dashboard'
+  }, [activeItem, pathname])
+  
+  const getLinkClass = useCallback((item: ActiveItem) => {
     const baseClass = 'sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-lg font-medium group'
-    if (activeItem === item) {
+    if (currentActiveItem === item) {
       return `${baseClass} active font-bold`
     }
     return `${baseClass} text-bm-white/90`
-  }
+  }, [currentActiveItem])
 
-  const getIconClass = (item: ActiveItem) => {
-    if (activeItem === item) {
+  const getIconClass = useCallback((item: ActiveItem) => {
+    if (currentActiveItem === item) {
       return 'material-symbols-outlined text-[22px] text-bm-white/80'
     }
     return 'material-symbols-outlined text-[22px] text-bm-white/80'
-  }
+  }, [currentActiveItem])
 
   return (
     <aside className="w-72 flex-shrink-0 bg-bm-maroon text-bm-white flex flex-col h-full shadow-2xl z-20 overflow-hidden">
@@ -156,5 +147,7 @@ export function Sidebar({ activeItem = 'dashboard' }: SidebarProps) {
     </aside>
   )
 }
+
+export const Sidebar = memo(SidebarComponent)
 
 

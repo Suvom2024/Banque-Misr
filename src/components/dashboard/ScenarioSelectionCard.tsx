@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, memo } from 'react'
 
 export interface ScenarioSelection {
   id: string
@@ -25,7 +25,7 @@ interface ScenarioSelectionCardProps {
   onSelect?: (id: string) => void
 }
 
-export function ScenarioSelectionCard({ scenario, onSelect }: ScenarioSelectionCardProps) {
+function ScenarioSelectionCardComponent({ scenario, onSelect }: ScenarioSelectionCardProps) {
   const difficultyIcon = useMemo(() => {
     switch (scenario.difficulty) {
       case 'Advanced':
@@ -152,3 +152,5 @@ export function ScenarioSelectionCard({ scenario, onSelect }: ScenarioSelectionC
     </div>
   )
 }
+
+export const ScenarioSelectionCard = memo(ScenarioSelectionCardComponent)

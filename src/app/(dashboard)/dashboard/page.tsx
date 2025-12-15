@@ -1,8 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { getUserDisplayName } from '@/lib/utils/profile'
 import dynamic from 'next/dynamic'
-import { Sidebar } from '@/components/dashboard/Sidebar'
+import { getUserDisplayName } from '@/lib/utils/profile'
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader'
 
 // Dynamic imports for better code splitting and initial load performance
@@ -22,42 +19,24 @@ const TrainingScenarios = dynamic(() => import('@/components/dashboard/TrainingS
 })
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/login')
-  }
-
   const userName = await getUserDisplayName()
 
   return (
-    <div className="font-display bg-bm-light-grey text-bm-text-primary antialiased h-screen overflow-hidden flex flex-col">
-      <div className="flex h-full w-full">
-        <Sidebar activeItem="dashboard" />
-        <div className="flex-1 flex flex-col h-full overflow-hidden bg-bm-light-grey pattern-bg relative">
-          {/* Decorative Background Element */}
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-bm-maroon/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+    <>
+      <DashboardHeader userName={userName} />
+      <div className="px-6 lg:px-8 py-6 lg:py-8">
+        <div className="max-w-screen-2xl mx-auto space-y-10 pb-10">
+          {/* Performance Section */}
+          <section className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+            <OverallPerformance />
+            <RecommendedFocus />
+          </section>
 
-          <DashboardHeader userName={userName} />
-
-          <main className="flex-grow overflow-y-auto px-8 py-8 w-full">
-            <div className="max-w-screen-2xl mx-auto space-y-10 pb-10">
-              {/* Performance Section */}
-              <section className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-                <OverallPerformance />
-                <RecommendedFocus />
-              </section>
-
-              {/* Training Scenarios Section */}
-              <TrainingScenarios />
-            </div>
-          </main>
+          {/* Training Scenarios Section */}
+          <TrainingScenarios />
         </div>
       </div>
-    </div>
+    </>
   )
 }
 

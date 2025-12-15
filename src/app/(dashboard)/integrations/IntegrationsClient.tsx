@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback, memo } from 'react'
 import { IntegrationsHeader } from '@/components/dashboard/IntegrationsHeader'
 import { IntegrationsFilters } from '@/components/dashboard/IntegrationsFilters'
 import { IntegrationCard, Integration } from '@/components/dashboard/IntegrationCard'
@@ -142,7 +142,7 @@ const defaultIntegrations: Integration[] = [
   },
 ]
 
-export function IntegrationsClient({ userName, userRole, userAvatar }: IntegrationsClientProps) {
+function IntegrationsClientComponent({ userName, userRole, userAvatar }: IntegrationsClientProps) {
   const [integrations, setIntegrations] = useState<Integration[]>(defaultIntegrations)
   const [activeCategory, setActiveCategory] = useState<'all' | 'communication' | 'productivity' | 'servers-apis'>('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -168,10 +168,10 @@ export function IntegrationsClient({ userName, userRole, userAvatar }: Integrati
     return filtered
   }, [integrations, activeCategory, searchQuery])
 
-  const connectedIntegrations = filteredIntegrations.filter((i) => i.status === 'connected')
-  const availableIntegrations = filteredIntegrations.filter((i) => i.status === 'available')
+  const connectedIntegrations = useMemo(() => filteredIntegrations.filter((i) => i.status === 'connected'), [filteredIntegrations])
+  const availableIntegrations = useMemo(() => filteredIntegrations.filter((i) => i.status === 'available'), [filteredIntegrations])
 
-  const handleToggle = (integrationId: string, settingId: string, enabled: boolean) => {
+  const handleToggle = useCallback((integrationId: string, settingId: string, enabled: boolean) => {
     setIntegrations((prev) =>
       prev.map((integration) => {
         if (integration.id === integrationId && integration.settings) {
@@ -185,30 +185,31 @@ export function IntegrationsClient({ userName, userRole, userAvatar }: Integrati
         return integration
       })
     )
-  }
+  }, [])
 
-  const handleConnect = (integrationId: string) => {
+  const handleConnect = useCallback((integrationId: string) => {
     // Handle connect logic
     console.log('Connecting integration:', integrationId)
     // In a real app, this would trigger an OAuth flow or API call
-  }
+  }, [])
 
-  const handleManage = (integrationId: string) => {
+  const handleManage = useCallback((integrationId: string) => {
     // Handle manage logic
     console.log('Managing integration:', integrationId)
-  }
+  }, [])
 
-  const handleSettings = (integrationId: string) => {
+  const handleSettings = useCallback((integrationId: string) => {
     // Handle settings logic
     console.log('Opening settings for:', integrationId)
-  }
+  }, [])
 
   return (
     <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-bm-light-grey">
       <IntegrationsHeader userName={userName} userRole={userRole} userAvatar={userAvatar} />
 
-      <main className="flex-grow overflow-y-auto w-full px-6 lg:px-8 py-8">
-        <div className="max-w-screen-2xl mx-auto">
+      <main className="flex-grow overflow-y-auto w-full">
+        <div className="px-6 lg:px-8 py-6 lg:py-8">
+          <div className="max-w-screen-2xl mx-auto">
           {/* Filters */}
           <IntegrationsFilters
             activeCategory={activeCategory}
@@ -267,9 +268,12 @@ export function IntegrationsClient({ userName, userRole, userAvatar }: Integrati
             <p className="text-sm text-bm-text-subtle">Try adjusting your filters or search query</p>
           </div>
         )}
+          </div>
         </div>
       </main>
     </div>
   )
 }
+
+export const IntegrationsClient = memo(IntegrationsClientComponent)
 
