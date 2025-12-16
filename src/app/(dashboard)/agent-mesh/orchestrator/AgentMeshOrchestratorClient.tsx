@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useCallback, useRef, useMemo } from 'react'
-import { Node, Edge, Connection, useReactFlow } from 'reactflow'
+import { Node, Edge, Connection } from 'reactflow'
 import { AgentMeshHeader } from '@/components/dashboard/agent-mesh/AgentMeshHeader'
 import { AgentLibrarySidebar } from '@/components/dashboard/agent-mesh/AgentLibrarySidebar'
 import { ReactFlowCanvas } from '@/components/dashboard/agent-mesh/ReactFlowCanvas'
-import { PropertiesPanel } from '@/components/dashboard/agent-mesh/PropertiesPanel'
+import { DynamicRightPanel } from '@/components/dashboard/agent-mesh/DynamicRightPanel'
+
+type RightPanelMode = 'agent-properties' | 'scenario-details' | 'none'
 
 interface AgentMeshOrchestratorClientProps {
   userName: string
@@ -146,7 +148,17 @@ export function AgentMeshOrchestratorClient({ userName, userRole, userAvatar }: 
   const [nodes, setNodes] = useState<Node[]>(initialNodes)
   const [edges, setEdges] = useState<Edge[]>(initialEdges)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>('persona-1')
+  const [rightPanelMode, setRightPanelMode] = useState<RightPanelMode>('agent-properties')
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
+
+  // Scenario data state
+  const [scenarioData, setScenarioData] = useState({
+    title: 'High-Value Client Negotiation',
+    learningObjective: 'Mastering the art of value-based selling and empathy handling during price objections.',
+    temperament: 75,
+    knowledgeLevel: 90,
+    skills: ['Empathy', 'Negotiation'] as string[],
+  })
 
   // Memoize selected node lookup to avoid recalculation on every render
   const selectedNode = useMemo(() => nodes.find((n) => n.id === selectedNodeId), [nodes, selectedNodeId])
@@ -159,7 +171,11 @@ export function AgentMeshOrchestratorClient({ userName, userRole, userAvatar }: 
       }))
     )
     setSelectedNodeId(nodeId)
-  }, [])
+    // Auto-open properties panel when node is selected
+    if (rightPanelMode === 'none') {
+      setRightPanelMode('agent-properties')
+    }
+  }, [rightPanelMode])
 
   const handleNodesChange = useCallback((updatedNodes: Node[]) => {
     setNodes(updatedNodes)
@@ -193,7 +209,16 @@ export function AgentMeshOrchestratorClient({ userName, userRole, userAvatar }: 
     setNodes([])
     setEdges([])
     setSelectedNodeId(null)
+    setRightPanelMode('none')
   }
+
+  const handlePanelToggle = useCallback((mode: RightPanelMode) => {
+    setRightPanelMode(mode)
+  }, [])
+
+  const handleClosePanel = useCallback(() => {
+    setRightPanelMode('none')
+  }, [])
 
   const handleRunSimulation = () => {
     // Animate edges to show workflow execution
@@ -204,47 +229,71 @@ export function AgentMeshOrchestratorClient({ userName, userRole, userAvatar }: 
     // Handle save configuration - implement save logic here
   }
 
-  const handleConfigurationChange = (config: any) => {
+  const handleConfigurationChange = useCallback((config: any) => {
     if (selectedNodeId) {
       setNodes((prev) =>
         prev.map((n) => (n.id === selectedNodeId ? { ...n, data: { ...n.data, configuration: config } } : n))
       )
     }
-  }
+  }, [selectedNodeId])
+
+  const handleScenarioDataChange = useCallback((updates: Partial<typeof scenarioData>) => {
+    setScenarioData((prev) => ({ ...prev, ...updates }))
+  }, [])
 
   const handleAgentDrop = useCallback(
     (event: React.DragEvent, position: { x: number; y: number }) => {
       event.preventDefault()
+      event.stopPropagation()
 
       const agentData = event.dataTransfer.getData('application/json')
       if (!agentData) return
 
-      const agent = JSON.parse(agentData)
-      const newNodeId = `${agent.type}-${Date.now()}`
+      try {
+        const agent = JSON.parse(agentData)
+        const newNodeId = `${agent.type}-${Date.now()}`
 
-      const newNode: Node = {
-        id: newNodeId,
-        type: 'agentNode',
-        position,
-        data: {
-          agentType: agent.type,
-          title: agent.title,
-          subtitle: agent.description,
-          isSelected: true,
-          isActive: false,
-          nodeType: agent.category === 'core' ? ('primary' as const) : ('processor' as const),
-        },
+        // Determine nodeType based on agent type
+        let nodeType: 'trigger' | 'primary' | 'validator' | 'feedback' | 'processor' | 'integrator' = 'primary'
+        if (agent.type === 'persona') {
+          nodeType = 'primary'
+        } else if (agent.type === 'policy') {
+          nodeType = 'validator'
+        } else if (agent.type === 'coaching') {
+          nodeType = 'feedback'
+        } else if (agent.type === 'summarizer') {
+          nodeType = 'processor'
+        } else if (agent.type === 'integrator') {
+          nodeType = 'integrator'
+        }
+
+        const newNode: Node = {
+          id: newNodeId,
+          type: 'agentNode',
+          position,
+          data: {
+            agentType: agent.type,
+            title: agent.title,
+            subtitle: agent.description,
+            isSelected: true,
+            isActive: false,
+            nodeType,
+          },
+        }
+
+        setNodes((prev) => {
+          const updated = prev.map((n) => ({
+            ...n,
+            data: { ...n.data, isSelected: false },
+          }))
+          updated.push(newNode)
+          return updated
+        })
+        setSelectedNodeId(newNodeId)
+        setRightPanelMode('agent-properties')
+      } catch (error) {
+        // Silently handle errors
       }
-
-      setNodes((prev) => {
-        const updated = prev.map((n) => ({
-          ...n,
-          data: { ...n.data, isSelected: false },
-        }))
-        updated.push(newNode)
-        return updated
-      })
-      setSelectedNodeId(newNodeId)
     },
     []
   )
@@ -257,6 +306,8 @@ export function AgentMeshOrchestratorClient({ userName, userRole, userAvatar }: 
         userAvatar={userAvatar}
         onCreateWorkflow={handleCreateWorkflow}
         onRunSimulation={handleRunSimulation}
+        rightPanelMode={rightPanelMode}
+        onPanelToggle={handlePanelToggle}
       />
 
       <main className="flex-1 flex overflow-hidden min-w-0 min-h-0">
@@ -272,11 +323,14 @@ export function AgentMeshOrchestratorClient({ userName, userRole, userAvatar }: 
             onDrop={handleAgentDrop}
           />
         </div>
-        <PropertiesPanel
+        <DynamicRightPanel
+          mode={rightPanelMode}
+          onClose={handleClosePanel}
+          selectedNodeId={selectedNodeId}
           agentType={selectedNode?.data?.agentType}
-          title={selectedNode?.data?.title}
-          description="Simulates a customer interaction based on a specific psychological profile. Used to test employee empathy."
-          configuration={
+          agentTitle={selectedNode?.data?.title}
+          agentDescription="Simulates a customer interaction based on a specific psychological profile. Used to test employee empathy."
+          agentConfiguration={
             selectedNode?.data?.configuration || {
               temperament: 75,
               patienceLevel: 20,
@@ -286,7 +340,21 @@ export function AgentMeshOrchestratorClient({ userName, userRole, userAvatar }: 
             }
           }
           onConfigurationChange={handleConfigurationChange}
-          onSave={handleSaveConfiguration}
+          onSaveConfiguration={handleSaveConfiguration}
+          scenarioTitle={scenarioData.title}
+          learningObjective={scenarioData.learningObjective}
+          temperament={scenarioData.temperament}
+          knowledgeLevel={scenarioData.knowledgeLevel}
+          skills={scenarioData.skills}
+          onScenarioTitleChange={(title) => handleScenarioDataChange({ title })}
+          onObjectiveChange={(objective) => handleScenarioDataChange({ learningObjective: objective })}
+          onTemperamentChange={(value) => handleScenarioDataChange({ temperament: value })}
+          onKnowledgeLevelChange={(value) => handleScenarioDataChange({ knowledgeLevel: value })}
+          onSkillRemove={(skill) => handleScenarioDataChange({ skills: scenarioData.skills.filter((s) => s !== skill) })}
+          onSkillAdd={(skill) => handleScenarioDataChange({ skills: [...scenarioData.skills, skill] })}
+          onPublish={() => {}}
+          onSaveDraft={() => {}}
+          onShare={() => {}}
         />
       </main>
     </div>

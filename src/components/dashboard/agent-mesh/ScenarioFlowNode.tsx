@@ -93,7 +93,7 @@ export function ScenarioFlowNode({ data, selected }: NodeProps<ScenarioFlowNodeD
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-2 !h-2 !bg-bm-grey !border-2 !border-white !rounded-full hover:!border-bm-maroon hover:!scale-125 transition-all"
+        className="!w-2 !h-2 !bg-bm-grey !border-2 !border-white !rounded-full hover:!border-bm-maroon"
       />
       <div className={`${styles.headerBg} p-3 rounded-t-xl border-b ${styles.headerBorder} flex justify-between items-center`}>
         <div className="flex items-center gap-2">
@@ -134,7 +134,7 @@ export function ScenarioFlowNode({ data, selected }: NodeProps<ScenarioFlowNodeD
         <Handle
           type="source"
           position={Position.Bottom}
-          className="!w-2 !h-2 !bg-bm-grey !border-2 !border-white !rounded-full hover:!border-bm-maroon hover:!scale-125 transition-all"
+          className="!w-2 !h-2 !bg-bm-grey !border-2 !border-white !rounded-full hover:!border-bm-maroon"
         />
       )}
       {type === 'trainee-response' && (

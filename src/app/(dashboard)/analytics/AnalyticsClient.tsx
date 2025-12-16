@@ -7,27 +7,27 @@ import { AnalyticsFilters } from '@/components/dashboard/AnalyticsFilters'
 
 // Dynamic imports for chart-heavy components to improve initial load
 const TeamPerformanceCard = dynamic(() => import('@/components/dashboard/TeamPerformanceCard').then(mod => ({ default: mod.TeamPerformanceCard })), {
-  loading: () => <div className="bg-white rounded-2xl shadow-card border border-white p-8 animate-pulse"><div className="h-64 bg-gray-200 rounded"></div></div>,
-  ssr: false,
+  loading: () => <div className="bg-white rounded-2xl shadow-card border border-white p-8"><div className="h-64 bg-gray-200 rounded"></div></div>,
+  ssr: true,
 })
 
 const PerformanceTrendCard = dynamic(() => import('@/components/dashboard/PerformanceTrendCard').then(mod => ({ default: mod.PerformanceTrendCard })), {
-  loading: () => <div className="bg-white rounded-2xl shadow-card border border-white p-8 animate-pulse"><div className="h-64 bg-gray-200 rounded"></div></div>,
-  ssr: false,
+  loading: () => <div className="bg-white rounded-2xl shadow-card border border-white p-8"><div className="h-64 bg-gray-200 rounded"></div></div>,
+  ssr: true,
 })
 
 const CompetencyBreakdownCard = dynamic(() => import('@/components/dashboard/CompetencyBreakdownCard').then(mod => ({ default: mod.CompetencyBreakdownCard })), {
-  loading: () => <div className="bg-white rounded-2xl shadow-card border border-white p-8 animate-pulse"><div className="h-64 bg-gray-200 rounded"></div></div>,
-  ssr: false,
+  loading: () => <div className="bg-white rounded-2xl shadow-card border border-white p-8"><div className="h-64 bg-gray-200 rounded"></div></div>,
+  ssr: true,
 })
 
 const AIInsightsCard = dynamic(() => import('@/components/dashboard/AIInsightsCard').then(mod => ({ default: mod.AIInsightsCard })), {
-  loading: () => <div className="bg-white rounded-2xl shadow-card border border-white p-8 animate-pulse"><div className="h-48 bg-gray-200 rounded"></div></div>,
+  loading: () => <div className="bg-white rounded-2xl shadow-card border border-white p-8"><div className="h-48 bg-gray-200 rounded"></div></div>,
   ssr: true,
 })
 
 const EmployeeMetricsTable = dynamic(() => import('@/components/dashboard/EmployeeMetricsTable').then(mod => ({ default: mod.EmployeeMetricsTable })), {
-  loading: () => <div className="bg-white rounded-2xl shadow-card border border-white p-8 animate-pulse"><div className="h-96 bg-gray-200 rounded"></div></div>,
+  loading: () => <div className="bg-white rounded-2xl shadow-card border border-white p-8"><div className="h-96 bg-gray-200 rounded"></div></div>,
   ssr: true,
 })
 

@@ -36,7 +36,7 @@ function OverallPerformanceComponent({
   return (
     <div className="xl:col-span-7 bg-white rounded-2xl shadow-card border border-white p-0 overflow-hidden relative group">
       <div className="absolute top-0 right-0 p-6 z-10">
-        <button className="text-bm-text-subtle hover:text-bm-maroon transition-colors text-sm font-medium flex items-center gap-1">
+        <button className="text-bm-text-subtle text-sm font-medium flex items-center gap-1">
           View Full Report <span className="material-symbols-outlined text-lg">arrow_forward</span>
         </button>
       </div>
@@ -65,7 +65,7 @@ function OverallPerformanceComponent({
               ></circle>
               {/* Main progress circle */}
               <circle
-                className="text-bm-maroon transition-all duration-1000 ease-out"
+                className="text-bm-maroon"
                 cx="50"
                 cy="50"
                 fill="none"
@@ -125,7 +125,7 @@ function OverallPerformanceComponent({
             {/* Metric Cards */}
             <div className="grid grid-cols-2 gap-4">
               {/* Time Trained */}
-              <div className="bg-bm-light-grey/50 p-3 rounded-xl border border-bm-grey hover:border-bm-maroon/20 transition-colors">
+              <div className="bg-bm-light-grey/50 p-3 rounded-xl border border-bm-grey">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-white rounded-lg shadow-sm text-bm-maroon">
                     <span className="material-symbols-outlined text-xl">timer</span>
@@ -143,7 +143,7 @@ function OverallPerformanceComponent({
               </div>
 
               {/* Key Strength */}
-              <div className="bg-bm-light-grey/50 p-3 rounded-xl border border-bm-grey hover:border-bm-maroon/20 transition-colors">
+              <div className="bg-bm-light-grey/50 p-3 rounded-xl border border-bm-grey">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-white rounded-lg shadow-sm text-bm-gold-dark">
                     <span className="material-symbols-outlined text-xl">psychology</span>

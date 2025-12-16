@@ -69,41 +69,26 @@ const config: Config = {
         'card': '0 0 0 1px rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.04)',
         'card-hover': '0 0 0 1px rgba(122, 26, 37, 0.1), 0 8px 24px rgba(122, 26, 37, 0.08)',
         'glow': '0 0 15px rgba(255, 199, 44, 0.3)',
+        'premium': '0 4px 20px -2px rgba(122, 26, 37, 0.08), 0 2px 8px -2px rgba(0, 0, 0, 0.04)',
+        'node-active': '0 0 0 2px #7A1A25, 0 8px 30px rgba(122, 26, 37, 0.15)',
+        'node-hover': '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(122, 26, 37, 0.1)',
+        'card-depth': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
       },
       backgroundImage: {
         'gradient-card': 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 60%, #FFFFFF 100%)',
+        'dot-pattern': 'radial-gradient(#E5E7EB 1px, transparent 1px)',
       },
-          animation: {
-            'blob': 'blob 7s infinite',
-            'wave': 'wave 25s linear infinite',
-            'wave-bars': 'wave 1.2s ease-in-out infinite',
-            'fade-in-up': 'fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-            'fade-in': 'fadeIn 1.5s ease-out forwards',
-            'shimmer': 'shimmer 2s infinite linear',
-            'spin-slow': 'spin 20s linear infinite',
-            'spin-reverse-slow': 'spin-reverse 25s linear infinite',
-            'pulse-glow': 'pulseGlow 3s ease-in-out infinite',
-            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            'float': 'float 6s ease-in-out infinite',
-            'float-delayed': 'float 6s ease-in-out 3s infinite',
-            'dash': 'dash 3s linear infinite',
-            'ping-slow': 'ping 3s cubic-bezier(0, 0, 0.2, 1) infinite',
-            'grow-graph': 'growGraph 3s ease-out forwards',
-            'wander': 'wander 8s ease-in-out infinite',
-            'wander-delayed': 'wander 10s ease-in-out 2s infinite',
-            'slide-up': 'slideUp 0.5s ease-out forwards',
-          },
+      backgroundSize: {
+        'grid': '20px 20px',
+      },
+      animation: {
+        'fade-in-up': 'fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'fade-in': 'fadeIn 1.5s ease-out forwards',
+        'shimmer': 'shimmer 2s infinite linear',
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'flow-dash': 'flowDash 1.5s linear infinite',
+      },
       keyframes: {
-        blob: {
-          '0%': { transform: 'translate(0px, 0px) scale(1)' },
-          '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
-          '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
-          '100%': { transform: 'translate(0px, 0px) scale(1)' },
-        },
-        wave: {
-          '0%': { transform: 'translateX(0)' },
-          '100%': { transform: 'translateX(-50%)' },
-        },
         fadeInUp: {
           '0%': { opacity: '0', transform: 'translateY(30px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
@@ -116,43 +101,13 @@ const config: Config = {
           '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(100%)' },
         },
-        'spin-reverse': {
-          'from': { transform: 'rotate(360deg)' },
-          'to': { transform: 'rotate(0deg)' },
-        },
-        pulseGlow: {
-          '0%, 100%': { opacity: '0.6', transform: 'scale(1)' },
-          '50%': { opacity: '1', transform: 'scale(1.05)' },
-        },
-        float: {
-          '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-10px)' },
-        },
-        dash: {
-          'to': { strokeDashoffset: '-100' },
-        },
-        growGraph: {
-          '0%': { strokeDasharray: '0, 1000' },
-          '100%': { strokeDasharray: '1000, 0' },
-        },
-            wander: {
-              '0%, 100%': { transform: 'translate(0, 0) rotate(0deg)' },
-              '25%': { transform: 'translate(10px, -15px) rotate(5deg)' },
-              '50%': { transform: 'translate(-10px, -20px) rotate(-5deg)' },
-              '75%': { transform: 'translate(15px, -10px) rotate(3deg)' },
-            },
-            waveHeight: {
-              '0%, 100%': { height: '20%' },
-              '50%': { height: '100%' },
-            },
-            slideUp: {
-              '0%': { opacity: '0', transform: 'translateY(20px)' },
-              '100%': { opacity: '1', transform: 'translateY(0)' },
-            },
-          },
+        flowDash: {
+          '0%': { strokeDashoffset: '24' },
+          '100%': { strokeDashoffset: '0' },
         },
       },
-      plugins: [],
-    }
+    },
+  },
+  plugins: [],
+}
 export default config
-

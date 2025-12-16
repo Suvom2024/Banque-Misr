@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/dashboard/Sidebar'
+import { PageLoader } from '@/components/ui/PageLoader'
 
 /**
  * Shared layout for all dashboard pages
@@ -23,12 +24,10 @@ export default async function DashboardLayout({
 
   return (
     <div className="font-display bg-bm-light-grey text-bm-text-primary antialiased h-screen overflow-hidden flex flex-col">
+      <PageLoader />
       <div className="flex h-full w-full">
         <Sidebar />
-        <div className="flex-1 flex flex-col h-full overflow-hidden bg-bm-light-grey pattern-bg relative">
-          {/* Optimized: Reduced blur intensity from blur-3xl to blur-2xl */}
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-bm-maroon/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-
+        <div className="flex-1 flex flex-col h-full overflow-hidden bg-bm-light-grey relative">
           <main className="flex-grow overflow-y-auto scroll-optimized w-full">
             {children}
           </main>

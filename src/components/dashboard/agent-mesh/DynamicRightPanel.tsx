@@ -78,7 +78,7 @@ export function DynamicRightPanel({
 
   return (
     <aside
-      className={`flex-shrink-0 bg-white border-l border-slate-200 shadow-xl z-20 flex flex-col h-full overflow-hidden transition-all duration-300 ease-in-out ${
+      className={`flex-shrink-0 bg-white border-l border-slate-200 shadow-[-4px_0_24px_rgba(0,0,0,0.02)] z-20 flex flex-col h-full overflow-hidden transition-all duration-300 ease-in-out ${
         mode === 'agent-properties' ? 'w-80' : 'w-96'
       }`}
     >

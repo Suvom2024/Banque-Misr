@@ -20,14 +20,14 @@ function DashboardHeaderComponent({ userName, userRole = 'Branch Manager', userA
         <div className="flex items-center space-x-8">
           {/* Notifications */}
           <div className="relative group">
-            <button className="relative text-bm-text-secondary hover:text-bm-maroon transition-colors p-2 rounded-full hover:bg-bm-grey/50">
+            <button className="relative text-bm-text-secondary p-2 rounded-full">
               <span className="material-symbols-outlined text-2xl">notifications</span>
-              <span className="absolute top-2 right-2 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white animate-pulse"></span>
+              <span className="absolute top-2 right-2 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white"></span>
             </button>
           </div>
           <div className="h-8 w-px bg-bm-grey"></div>
           {/* User Profile */}
-          <div className="flex items-center space-x-4 cursor-pointer hover:opacity-80 transition-opacity">
+          <div className="flex items-center space-x-4 cursor-pointer">
             <div className="text-right hidden md:block">
               <p className="font-bold text-sm text-bm-text-primary">{userName}</p>
               <p className="text-xs text-bm-text-secondary font-medium">{userRole}</p>
@@ -50,7 +50,7 @@ function DashboardHeaderComponent({ userName, userRole = 'Branch Manager', userA
               <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
             {/* Message Icon */}
-            <button className="relative text-bm-text-secondary hover:text-bm-maroon transition-colors p-2 rounded-full hover:bg-bm-grey/50">
+            <button className="relative text-bm-text-secondary p-2 rounded-full">
               <span className="material-symbols-outlined text-2xl">mail</span>
               <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-green-500 ring-2 ring-white"></span>
             </button>

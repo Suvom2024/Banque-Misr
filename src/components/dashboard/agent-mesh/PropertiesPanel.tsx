@@ -269,7 +269,7 @@ export function PropertiesPanel({
         <div className="p-4 bg-slate-50 border-t border-slate-200 flex-shrink-0">
           <button
             onClick={onSave}
-            className="w-full bg-bm-maroon text-white font-bold py-3 rounded-lg hover:bg-bm-maroon-light transition-all shadow-lg shadow-bm-maroon/20 flex items-center justify-center gap-2"
+            className="w-full bg-bm-maroon text-white font-bold py-3 rounded-lg shadow-lg shadow-bm-maroon/20 flex items-center justify-center gap-2"
           >
             <span className="material-symbols-outlined text-lg">{isCreating ? 'add_circle' : 'save'}</span>
             {isCreating ? 'Create Agent' : 'Save Configuration'}

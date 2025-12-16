@@ -135,13 +135,13 @@ function EmployeeMetricsTableComponent({
         </div>
         <div className="flex gap-3">
           <button
-            className="flex items-center gap-2 px-4 py-2 bg-bm-white border border-bm-grey rounded-lg text-sm font-bold text-bm-text-secondary hover:bg-bm-light-grey transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-bm-white border border-bm-grey rounded-lg text-sm font-bold text-bm-text-secondary"
             onClick={onExportCSV}
           >
             <span className="material-symbols-outlined text-lg">download</span>
             Export CSV
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-bm-white border border-bm-grey rounded-lg text-sm font-bold text-bm-text-secondary hover:bg-bm-light-grey transition-colors">
+          <button className="flex items-center gap-2 px-4 py-2 bg-bm-white border border-bm-grey rounded-lg text-sm font-bold text-bm-text-secondary">
             <span className="material-symbols-outlined text-lg">view_column</span>
             Columns
           </button>
@@ -174,7 +174,7 @@ function EmployeeMetricsTableComponent({
                 return (
                   <tr
                     key={employee.id}
-                    className="group hover:bg-bm-light-grey/40 transition-colors absolute w-full"
+                    className="group absolute w-full"
                     style={{
                       height: `${virtualRow.size}px`,
                       transform: `translateY(${virtualRow.start}px)`,
@@ -219,7 +219,7 @@ function EmployeeMetricsTableComponent({
                   </td>
                   <td className="p-5 text-right">
                     <button
-                      className="text-bm-text-subtle hover:text-bm-maroon p-1.5 rounded-full hover:bg-white transition-all shadow-sm opacity-0 group-hover:opacity-100"
+                      className="text-bm-text-subtle p-1.5 rounded-full shadow-sm opacity-0"
                         onClick={() => handleViewDetails(employee.id)}
                     >
                       <span className="material-symbols-outlined text-xl">visibility</span>
@@ -236,14 +236,14 @@ function EmployeeMetricsTableComponent({
           <span>Showing {employees.length} of {totalPages * 4} employees</span>
           <div className="flex gap-2">
             <button
-              className="px-3 py-1 bg-white border border-bm-grey rounded hover:bg-bm-grey transition-colors disabled:opacity-50"
+              className="px-3 py-1 bg-white border border-bm-grey rounded disabled:opacity-50"
               disabled={page === 1}
               onClick={() => handlePageChange(page - 1)}
             >
               Previous
             </button>
             <button
-              className="px-3 py-1 bg-white border border-bm-grey rounded hover:bg-bm-grey transition-colors"
+              className="px-3 py-1 bg-white border border-bm-grey rounded"
               disabled={page === totalPages}
               onClick={() => handlePageChange(page + 1)}
             >

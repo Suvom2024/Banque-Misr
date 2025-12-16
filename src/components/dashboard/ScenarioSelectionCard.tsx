@@ -48,7 +48,7 @@ function ScenarioSelectionCardComponent({ scenario, onSelect }: ScenarioSelectio
   return (
     <div
       className={`scenario-card group relative bg-bm-white rounded-2xl border border-bm-grey overflow-hidden cursor-pointer h-full flex flex-col ${
-        scenario.isSelected ? 'selected' : 'hover:border-bm-maroon/30'
+        scenario.isSelected ? 'selected' : ''
       }`}
       onClick={() => onSelect?.(scenario.id)}
     >
@@ -59,14 +59,14 @@ function ScenarioSelectionCardComponent({ scenario, onSelect }: ScenarioSelectio
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
             <img
               alt={scenario.title}
-              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+              className="w-full h-full object-cover"
               src={scenario.imageUrl}
             />
           </>
         ) : (
           <>
             <div className="absolute inset-0 bg-bm-mint/50 flex items-center justify-center overflow-hidden">
-              <div className="absolute inset-0 opacity-10 pattern-bg text-bm-green-dark"></div>
+              <div className="absolute inset-0 opacity-10 text-bm-green-dark"></div>
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-10"></div>
             {scenario.icon && (
@@ -89,7 +89,7 @@ function ScenarioSelectionCardComponent({ scenario, onSelect }: ScenarioSelectio
         {/* Bookmark Button */}
         <div className="absolute top-4 right-4 z-20">
           <button
-            className="p-2 rounded-full bg-bm-white/20 backdrop-blur-md text-white hover:bg-bm-white hover:text-bm-maroon transition-colors"
+            className="p-2 rounded-full bg-bm-white/20 backdrop-blur-md text-white"
             onClick={(e) => {
               e.stopPropagation()
               // Handle bookmark
@@ -139,11 +139,11 @@ function ScenarioSelectionCardComponent({ scenario, onSelect }: ScenarioSelectio
             AI Coach: <span className={scenario.aiCoach === 'Active' ? 'text-bm-maroon' : 'text-bm-text-secondary'}>{scenario.aiCoach}</span>
           </span>
           {scenario.isSelected ? (
-            <span className="text-bm-maroon text-sm font-bold flex items-center gap-1 opacity-100 transition-opacity">
+            <span className="text-bm-maroon text-sm font-bold flex items-center gap-1 opacity-100">
               Selected <span className="material-symbols-outlined text-lg">check_circle</span>
             </span>
           ) : (
-            <span className="text-bm-text-subtle text-sm font-medium group-hover:text-bm-maroon flex items-center gap-1 transition-colors">
+            <span className="text-bm-text-subtle text-sm font-medium flex items-center gap-1">
               Select Scenario <span className="material-symbols-outlined text-lg">arrow_forward</span>
             </span>
           )}

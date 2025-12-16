@@ -58,7 +58,7 @@ export function ScenarioDetailsPanel({
     <aside className="w-96 bg-bm-white border-l border-bm-grey shadow-xl z-20 flex flex-col h-full overflow-hidden">
       <div className="p-5 border-b border-bm-grey flex justify-between items-center bg-bm-white sticky top-0">
         <h2 className="font-bold text-lg text-bm-text-primary">Scenario Details</h2>
-        <button onClick={onClose} className="text-bm-text-secondary hover:text-bm-maroon transition-colors">
+        <button onClick={onClose} className="text-bm-text-secondary">
           <span className="material-symbols-outlined">close</span>
         </button>
       </div>
@@ -97,7 +97,7 @@ export function ScenarioDetailsPanel({
                 }}
               />
               <button
-                className="absolute bottom-2 right-2 p-1 text-bm-gold hover:bg-bm-light-grey rounded transition-colors"
+                className="absolute bottom-2 right-2 p-1 text-bm-gold rounded"
                 title="AI Polish"
               >
                 <span className="material-symbols-outlined text-lg">magic_button</span>
@@ -176,7 +176,7 @@ export function ScenarioDetailsPanel({
                 </button>
               </span>
             ))}
-            <button className="inline-flex items-center px-2 py-1 border border-dashed border-bm-text-subtle rounded-md text-xs font-medium text-bm-text-secondary hover:text-bm-maroon hover:border-bm-maroon transition-colors">
+            <button className="inline-flex items-center px-2 py-1 border border-dashed border-bm-text-subtle rounded-md text-xs font-medium text-bm-text-secondary">
               <span className="material-symbols-outlined text-[16px] mr-1">add</span>
               Add Skill
             </button>
@@ -185,8 +185,8 @@ export function ScenarioDetailsPanel({
         <hr className="border-bm-grey" />
         <div className="space-y-3">
           <h3 className="font-bold text-bm-text-primary text-sm">Supporting Resources</h3>
-          <div className="border-2 border-dashed border-bm-grey rounded-xl p-4 text-center hover:bg-bm-light-grey/50 transition-colors cursor-pointer group">
-            <span className="material-symbols-outlined text-3xl text-bm-text-subtle group-hover:text-bm-maroon mb-2">cloud_upload</span>
+          <div className="border-2 border-dashed border-bm-grey rounded-xl p-4 text-center cursor-pointer">
+            <span className="material-symbols-outlined text-3xl text-bm-text-subtle mb-2">cloud_upload</span>
             <p className="text-xs text-bm-text-secondary">Drag PDF, Video or Links here</p>
           </div>
           <div className="space-y-2">
@@ -208,15 +208,15 @@ export function ScenarioDetailsPanel({
       <div className="p-6 bg-bm-light-grey border-t border-bm-grey space-y-3 mt-auto">
         <button
           onClick={onPublish}
-          className="w-full bg-bm-gold hover:bg-bm-gold-dark text-bm-maroon-dark font-extrabold py-3 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 group ai-sparkle"
+          className="w-full bg-bm-gold text-bm-maroon-dark font-extrabold py-3 px-4 rounded-xl shadow-md flex items-center justify-center gap-2"
         >
-          <span className="material-symbols-outlined group-hover:animate-bounce">rocket_launch</span>
+          <span className="material-symbols-outlined">rocket_launch</span>
           Publish Scenario
         </button>
         <div className="flex gap-3">
           <button
             onClick={onSaveDraft}
-            className="flex-1 bg-white border border-bm-grey text-bm-text-secondary font-bold py-2.5 px-4 rounded-xl hover:bg-gray-50 transition-colors"
+            className="flex-1 bg-white border border-bm-grey text-bm-text-secondary font-bold py-2.5 px-4 rounded-xl"
           >
             Save Draft
           </button>

@@ -41,7 +41,7 @@ interface LibraryScenarioCardProps {
 function LibraryScenarioCardComponent({ scenario }: LibraryScenarioCardProps) {
 
   return (
-    <div className="hover-lift bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-card group relative h-full">
+    <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-card group relative h-full">
       {scenario.imageUrl ? (
         <div className="h-48 bg-gradient-to-br from-bm-maroon-light to-bm-maroon relative p-6 flex flex-col justify-between overflow-hidden">
           <div className="absolute right-[-20px] top-[-20px] opacity-10">
@@ -51,7 +51,7 @@ function LibraryScenarioCardComponent({ scenario }: LibraryScenarioCardProps) {
             <span className="bg-white/20 text-white px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider border border-white/10">
               {scenario.category}
             </span>
-            <button className="text-white/70 hover:text-white transition-colors">
+            <button className="text-white/70">
               <span className="material-symbols-outlined">bookmark_border</span>
             </button>
           </div>
@@ -106,7 +106,7 @@ function LibraryScenarioCardComponent({ scenario }: LibraryScenarioCardProps) {
           <div className="flex gap-2">
               <Link
                 href={`/training-hub/session/${scenario.id}/live`}
-                className="bg-bm-maroon text-white font-bold py-2.5 px-6 rounded-lg text-sm hover:bg-bm-maroon-dark transition-colors shadow-lg shadow-bm-maroon/20"
+                className="bg-bm-maroon text-white font-bold py-2.5 px-6 rounded-lg text-sm shadow-lg shadow-bm-maroon/20"
               >
                 Start Scenario
               </Link>
@@ -114,7 +114,7 @@ function LibraryScenarioCardComponent({ scenario }: LibraryScenarioCardProps) {
             {scenario.id === '1' && (
               <Link
                 href="/training-hub/session/demo-241/agents"
-                className="bg-bm-maroon-dark text-white font-bold py-2.5 px-4 rounded-lg text-sm hover:bg-bm-maroon transition-colors shadow-lg shadow-bm-maroon/20 flex items-center gap-1"
+                className="bg-bm-maroon-dark text-white font-bold py-2.5 px-4 rounded-lg text-sm shadow-lg shadow-bm-maroon/20 flex items-center gap-1"
                 title="View Agent Breakdown"
               >
                 <span className="material-symbols-outlined text-base">psychology</span>

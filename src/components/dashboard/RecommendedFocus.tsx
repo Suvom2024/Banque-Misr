@@ -40,20 +40,20 @@ function RecommendedFocusComponent({ recommendation = defaultRecommendation }: R
           </h2>
           <p className="text-white/70 text-sm mt-1">AI-curated based on your recent gaps.</p>
         </div>
-        <button className="bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition-colors">
+        <button className="bg-white/10 text-white rounded-full p-2">
           <span className="material-symbols-outlined">refresh</span>
         </button>
       </div>
 
       {/* Recommendation Card */}
       <div className="flex-grow flex flex-col justify-center relative z-10">
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/10 hover:bg-white/15 transition-all cursor-pointer group mb-4">
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/10 cursor-pointer mb-4">
           <div className="flex items-start gap-4">
-            <div className="bg-bm-gold text-bm-maroon p-3 rounded-lg shadow-lg group-hover:scale-110 transition-transform duration-300">
+            <div className="bg-bm-gold text-bm-maroon p-3 rounded-lg shadow-lg">
               <span className="material-symbols-outlined text-2xl">{recommendation.icon}</span>
             </div>
             <div className="flex-1">
-              <h4 className="font-bold text-lg text-white mb-1 group-hover:text-bm-gold transition-colors">
+              <h4 className="font-bold text-lg text-white mb-1">
                 {recommendation.title}
               </h4>
               <p className="text-white/80 text-sm leading-relaxed mb-3">{recommendation.description}</p>
@@ -68,7 +68,7 @@ function RecommendedFocusComponent({ recommendation = defaultRecommendation }: R
                 ))}
               </div>
             </div>
-            <span className="material-symbols-outlined text-white/50 group-hover:text-bm-gold group-hover:translate-x-1 transition-all">
+            <span className="material-symbols-outlined text-white/50">
               chevron_right
             </span>
           </div>
@@ -82,7 +82,7 @@ function RecommendedFocusComponent({ recommendation = defaultRecommendation }: R
           <div className="w-2 h-2 rounded-full bg-white/30 ml-3"></div>
           <div className="w-2 h-2 rounded-full bg-white/30 ml-3"></div>
         </div>
-        <button className="text-xs font-bold text-bm-gold hover:text-white transition-colors flex items-center gap-1 uppercase tracking-wide">
+        <button className="text-xs font-bold text-bm-gold flex items-center gap-1 uppercase tracking-wide">
           View All Suggestions <span className="material-symbols-outlined text-sm">arrow_right_alt</span>
         </button>
       </div>

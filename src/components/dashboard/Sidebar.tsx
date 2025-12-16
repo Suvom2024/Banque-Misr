@@ -31,7 +31,7 @@ function SidebarComponent({ activeItem }: SidebarProps) {
     if (currentActiveItem === item) {
       return `${baseClass} active font-bold`
     }
-    return `${baseClass} text-bm-white/90`
+    return `${baseClass} text-bm-white/90 hover:bg-white/10`
   }, [currentActiveItem])
 
   const getIconClass = useCallback((item: ActiveItem) => {
@@ -103,7 +103,7 @@ function SidebarComponent({ activeItem }: SidebarProps) {
               <span className="font-bold text-xs">AI Assistant</span>
             </div>
             <p className="text-[10px] text-bm-white/80 leading-relaxed mb-2">Need help interpreting the data? Ask our AI assistant.</p>
-            <button className="w-full bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold py-1.5 px-2 rounded-lg transition-colors border border-white/10">
+            <button className="w-full bg-white/10 text-white text-[10px] font-bold py-1.5 px-2 rounded-lg border border-white/10">
               Ask Question
             </button>
           </div>
@@ -118,7 +118,7 @@ function SidebarComponent({ activeItem }: SidebarProps) {
               <h3 className="font-semibold text-bm-white text-sm">AI Coach</h3>
             </div>
             <p className="text-xs text-bm-white/60 mb-4 leading-relaxed">Stuck on a goal? Ask your AI coach for personalized tips.</p>
-            <button className="w-full bg-white/5 hover:bg-white/10 text-bm-gold text-xs font-bold py-2.5 px-4 rounded-lg transition-colors border border-bm-gold/20">
+            <button className="w-full bg-white/5 text-bm-gold text-xs font-bold py-2.5 px-4 rounded-lg border border-bm-gold/20">
               Ask Coach
             </button>
           </div>
@@ -128,7 +128,7 @@ function SidebarComponent({ activeItem }: SidebarProps) {
           <div className="p-3 rounded-lg bg-bm-maroon-dark/40">
             <h3 className="font-semibold text-bm-white mb-1 text-xs">Need Help?</h3>
             <p className="text-xs text-bm-white/70 mb-2">Our support team is here to assist with connection issues.</p>
-            <button className="w-full bg-bm-gold/20 text-bm-gold font-bold py-1.5 px-3 rounded-lg text-xs hover:bg-bm-gold/30 transition-colors">
+            <button className="w-full bg-bm-gold/20 text-bm-gold font-bold py-1.5 px-3 rounded-lg text-xs">
               Contact Support
             </button>
           </div>
@@ -136,7 +136,7 @@ function SidebarComponent({ activeItem }: SidebarProps) {
       ) : (
         <div className="flex-shrink-0 p-4 border-t border-bm-maroon-dark/50">
           <Link
-            className="w-full flex items-center justify-center bg-bm-gold/20 text-bm-gold font-bold py-2.5 px-3 rounded-xl text-xs hover:bg-bm-gold/30 transition-all duration-300 border border-bm-gold/30"
+            className="w-full flex items-center justify-center bg-bm-gold/20 text-bm-gold font-bold py-2.5 px-3 rounded-xl text-xs border border-bm-gold/30"
             href="/training-hub/new-session"
           >
             <span className="material-symbols-outlined mr-1.5 text-lg">add_circle</span>

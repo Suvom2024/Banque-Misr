@@ -98,8 +98,20 @@ export function AgentLibrarySidebar({ onAgentDrag }: AgentLibrarySidebarProps) {
   }, [utilityAgents, searchQuery])
 
   const handleDragStart = (e: React.DragEvent, agent: Agent) => {
-    e.dataTransfer.setData('application/json', JSON.stringify(agent))
+    const agentData = JSON.stringify(agent)
+    e.dataTransfer.setData('application/json', agentData)
     e.dataTransfer.effectAllowed = 'copy'
+    // Add visual feedback
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '0.5'
+    }
+  }
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    // Reset opacity
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '1'
+    }
   }
 
   return (
@@ -107,16 +119,16 @@ export function AgentLibrarySidebar({ onAgentDrag }: AgentLibrarySidebarProps) {
       <div className="p-5 border-b border-slate-100 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-slate-800">Agent Library</h3>
-          <button className="text-slate-400 hover:text-bm-maroon transition-colors">
+          <button className="text-slate-400">
             <span className="material-symbols-outlined text-xl">tune</span>
           </button>
         </div>
         <div className="relative group">
-          <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-lg group-hover:text-bm-maroon transition-colors">
+          <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-lg">
             search
           </span>
           <input
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-bm-maroon/20 focus:border-bm-maroon transition-all placeholder-slate-400"
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-bm-maroon/20 focus:border-bm-maroon placeholder-slate-400"
             placeholder="Search agents..."
             type="text"
             value={searchQuery}
@@ -133,15 +145,16 @@ export function AgentLibrarySidebar({ onAgentDrag }: AgentLibrarySidebarProps) {
                 key={agent.id}
                 draggable
                 onDragStart={(e) => handleDragStart(e, agent)}
+                onDragEnd={handleDragEnd}
                 className="group bg-white border border-slate-200 rounded-xl p-3 cursor-grab active:cursor-grabbing hover:border-bm-maroon/30 hover:shadow-md transition-all flex items-start gap-3 select-none"
               >
                 <div
-                  className={`w-10 h-10 rounded-lg ${agent.bgColor} ${agent.color} flex items-center justify-center flex-shrink-0 group-hover:bg-opacity-100 transition-colors shadow-sm`}
+                  className={`w-10 h-10 rounded-lg ${agent.bgColor} ${agent.color} flex items-center justify-center flex-shrink-0 shadow-sm`}
                 >
                   <span className="material-symbols-outlined">{agent.icon}</span>
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-800 group-hover:text-bm-maroon transition-colors">{agent.title}</p>
+                  <p className="text-sm font-bold text-slate-800">{agent.title}</p>
                   <p className="text-xs text-slate-500 mt-0.5">{agent.description}</p>
                 </div>
               </div>
@@ -156,15 +169,16 @@ export function AgentLibrarySidebar({ onAgentDrag }: AgentLibrarySidebarProps) {
                 key={agent.id}
                 draggable
                 onDragStart={(e) => handleDragStart(e, agent)}
+                onDragEnd={handleDragEnd}
                 className="group bg-white border border-slate-200 rounded-xl p-3 cursor-grab active:cursor-grabbing hover:border-bm-maroon/30 hover:shadow-md transition-all flex items-start gap-3 select-none"
               >
                 <div
-                  className={`w-10 h-10 rounded-lg ${agent.bgColor} ${agent.color} flex items-center justify-center flex-shrink-0 group-hover:bg-opacity-100 transition-colors shadow-sm`}
+                  className={`w-10 h-10 rounded-lg ${agent.bgColor} ${agent.color} flex items-center justify-center flex-shrink-0 shadow-sm`}
                 >
                   <span className="material-symbols-outlined">{agent.icon}</span>
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-800 group-hover:text-bm-maroon transition-colors">{agent.title}</p>
+                  <p className="text-sm font-bold text-slate-800">{agent.title}</p>
                   <p className="text-xs text-slate-500 mt-0.5">{agent.description}</p>
                 </div>
               </div>

@@ -102,10 +102,10 @@ export function CompetencyBreakdownCard({
   }), [data])
 
   return (
-    <div className="bg-white rounded-2xl shadow-card p-6 border border-bm-grey/60 card-transition h-auto">
+    <div className="bg-white rounded-2xl shadow-card p-6 border border-bm-grey/60 h-auto">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-bm-text-primary tracking-tight leading-tight">Competency Breakdown</h2>
-        <button className="p-1 text-bm-text-secondary hover:text-bm-maroon rounded transition-colors">
+        <button className="p-1 text-bm-text-secondary rounded">
           <span className="material-symbols-outlined">more_horiz</span>
         </button>
       </div>

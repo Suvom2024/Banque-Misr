@@ -84,21 +84,21 @@ export function ScenarioCard({ scenario }: ScenarioCardProps) {
             <div className="flex gap-2">
               <Link
                 href={`/training-hub/session/${scenario.id}`}
-                className="flex-1 bg-bm-maroon text-white font-bold py-3 px-4 rounded-xl text-sm shadow-md shadow-bm-maroon/20 hover:bg-bm-maroon-dark hover:shadow-lg transition-all flex items-center justify-center gap-2 group"
+                className="flex-1 bg-bm-maroon text-white font-bold py-3 px-4 rounded-xl text-sm shadow-md shadow-bm-maroon/20 flex items-center justify-center gap-2"
               >
                 <span className="material-symbols-outlined text-lg">description</span>
                 View Report
               </Link>
               <Link
                 href={`/training-hub/session/${scenario.id}/agents`}
-                className="bg-bm-maroon-dark text-white font-bold py-3 px-3 rounded-xl text-sm shadow-md shadow-bm-maroon/20 hover:bg-bm-maroon hover:shadow-lg transition-all flex items-center justify-center group"
+                className="bg-bm-maroon-dark text-white font-bold py-3 px-3 rounded-xl text-sm shadow-md shadow-bm-maroon/20 flex items-center justify-center"
                 title="View Agent Breakdown"
               >
                 <span className="material-symbols-outlined text-lg">psychology</span>
               </Link>
             </div>
-            <button className="w-full bg-bm-gold text-bm-maroon-dark font-bold py-3 px-4 rounded-xl text-sm shadow-md shadow-bm-gold/20 hover:bg-bm-gold-dark hover:shadow-lg transition-all flex items-center justify-center gap-2 group">
-              <span className="material-symbols-outlined text-lg group-hover:rotate-180 transition-transform duration-500">
+            <button className="w-full bg-bm-gold text-bm-maroon-dark font-bold py-3 px-4 rounded-xl text-sm shadow-md shadow-bm-gold/20 flex items-center justify-center gap-2">
+              <span className="material-symbols-outlined text-lg">
                 replay
               </span>
               Start Again
@@ -107,18 +107,18 @@ export function ScenarioCard({ scenario }: ScenarioCardProps) {
         )
       case 'in-progress':
         return (
-          <button className="w-full bg-bm-maroon text-white font-bold py-3 px-4 rounded-xl text-sm shadow-md shadow-bm-maroon/20 hover:bg-bm-maroon-dark hover:shadow-lg transition-all flex items-center justify-center gap-2 group">
+          <button className="w-full bg-bm-maroon text-white font-bold py-3 px-4 rounded-xl text-sm shadow-md shadow-bm-maroon/20 flex items-center justify-center gap-2">
             Continue Training
-            <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">
+            <span className="material-symbols-outlined text-lg">
               arrow_forward
             </span>
           </button>
         )
       default:
         return (
-          <button className="w-full bg-white border-2 border-bm-gold text-bm-maroon font-bold py-3 px-4 rounded-xl text-sm hover:bg-bm-gold hover:text-bm-maroon-dark transition-all flex items-center justify-center gap-2 group">
+          <button className="w-full bg-white border-2 border-bm-gold text-bm-maroon font-bold py-3 px-4 rounded-xl text-sm flex items-center justify-center gap-2">
             Start Training
-            <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">
+            <span className="material-symbols-outlined text-lg">
               play_arrow
             </span>
           </button>
@@ -129,15 +129,15 @@ export function ScenarioCard({ scenario }: ScenarioCardProps) {
   return (
     <div
       className={`scenario-card bg-white rounded-2xl shadow-card border ${
-        scenario.status === 'in-progress' ? 'border-bm-gold/50 ring-1 ring-bm-gold/20 transform scale-[1.01]' : 'border-bm-grey'
-      } overflow-hidden flex flex-col h-full relative ${scenario.status === 'not-started' ? 'opacity-90 hover:opacity-100' : ''}`}
+        scenario.status === 'in-progress' ? 'border-bm-gold/50 ring-1 ring-bm-gold/20 scale-[1.01]' : 'border-bm-grey'
+      } overflow-hidden flex flex-col h-full relative`}
     >
       {/* Top Border */}
       <div className={`h-2 ${getTopBorderColor()} w-full`}></div>
 
       {/* In Progress Badge Overlay */}
-      {scenario.status === 'in-progress' && (
-        <div className="absolute top-4 right-4 animate-pulse">{getStatusBadge()}</div>
+        {scenario.status === 'in-progress' && (
+        <div className="absolute top-4 right-4">{getStatusBadge()}</div>
       )}
 
       {/* Card Content */}
@@ -189,7 +189,7 @@ export function ScenarioCard({ scenario }: ScenarioCardProps) {
           {scenario.status === 'completed' && scenario.score !== undefined ? (
             <Link
               href={`/training-hub/session/${scenario.id}`}
-              className="flex items-center gap-1 text-bm-maroon font-bold hover:text-bm-maroon-dark transition-colors cursor-pointer"
+              className="flex items-center gap-1 text-bm-maroon font-bold cursor-pointer"
             >
               <span className="material-symbols-outlined text-sm">emoji_events</span> Score: {scenario.score}%
             </Link>

@@ -118,7 +118,7 @@ export function PerformanceTrendCard({
   }), [actualData, targetData, forecastData, categories])
 
   return (
-    <div className="bg-white rounded-2xl shadow-card p-6 border border-bm-grey/60 card-transition">
+    <div className="bg-white rounded-2xl shadow-card p-6 border border-bm-grey/60">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-bold text-bm-text-primary tracking-tight leading-tight">Performance Trend</h2>

@@ -166,18 +166,18 @@ export function MultiAgenticCoachingClient({ userName, sessionId }: MultiAgentic
             />
             <div className="flex items-center justify-center gap-6">
               <button
-                className="p-3 text-bm-text-secondary hover:text-bm-maroon hover:bg-bm-light-grey rounded-full transition-all"
+                className="p-3 text-bm-text-secondary rounded-full"
                 title="Restart Turn"
               >
                 <span className="material-symbols-outlined text-2xl">replay</span>
               </button>
-              <button className="group relative flex items-center justify-center w-16 h-16 rounded-full bg-bm-maroon text-bm-white hover:bg-bm-maroon-dark hover:scale-105 transition-all shadow-lg hover:shadow-xl">
+              <button className="group relative flex items-center justify-center w-16 h-16 rounded-full bg-bm-maroon text-bm-white shadow-lg">
                 <span className="material-symbols-outlined text-3xl group-hover:hidden">mic</span>
                 <span className="material-symbols-outlined text-3xl hidden group-hover:block">mic_none</span>
                 <span className="absolute inline-flex h-full w-full rounded-full bg-bm-maroon opacity-20 animate-ping"></span>
               </button>
               <button
-                className="p-3 text-bm-text-secondary hover:text-bm-maroon hover:bg-bm-light-grey rounded-full transition-all"
+                className="p-3 text-bm-text-secondary rounded-full"
                 title="Keyboard Input"
               >
                 <span className="material-symbols-outlined text-2xl">keyboard</span>

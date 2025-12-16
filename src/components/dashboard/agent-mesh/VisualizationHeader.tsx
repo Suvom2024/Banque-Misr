@@ -65,7 +65,7 @@ export function VisualizationHeader({
             <>
               <button
                 onClick={onCreateWorkflow}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-50 hover:border-bm-maroon/30 hover:text-bm-maroon transition-all text-sm shadow-sm group"
+                className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg text-sm shadow-sm group"
               >
                 <span className="material-symbols-outlined text-xl text-slate-400 group-hover:text-bm-maroon transition-colors">
                   add_circle
@@ -74,7 +74,7 @@ export function VisualizationHeader({
               </button>
               <button
                 onClick={onRunSimulation}
-                className="flex items-center gap-2 px-5 py-2.5 bg-bm-gold text-bm-maroon font-extrabold rounded-lg hover:bg-bm-gold-dark transition-all text-sm shadow-md hover:shadow-lg transform active:scale-95"
+                className="flex items-center gap-2 px-5 py-2.5 bg-bm-gold text-bm-maroon font-extrabold rounded-lg text-sm shadow-md"
               >
                 <span className="material-symbols-outlined text-xl">play_arrow</span>
                 Run Simulation
@@ -83,7 +83,7 @@ export function VisualizationHeader({
           )}
           <button
             onClick={() => onViewModeChange?.(viewMode === 'mesh' ? 'scenario' : 'mesh')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-all ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm ${
               viewMode === 'mesh'
                 ? 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                 : 'bg-bm-maroon text-white hover:bg-bm-maroon-dark'

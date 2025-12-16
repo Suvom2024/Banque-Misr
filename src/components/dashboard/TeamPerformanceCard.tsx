@@ -95,14 +95,14 @@ export function TeamPerformanceCard({
   }, [aiSummary])
 
   return (
-    <div className="bg-white rounded-2xl shadow-card p-0 border border-bm-grey/60 overflow-hidden card-transition">
+    <div className="bg-white rounded-2xl shadow-card p-0 border border-bm-grey/60 overflow-hidden">
       <div className="p-6 md:p-8 flex flex-col md:flex-row items-center gap-8">
         {/* Gauge Chart */}
         <div className="flex-shrink-0 relative">
           <div className="relative z-10">
             <Chart options={gaugeOptions} series={gaugeOptions.series} type="radialBar" height={280} />
           </div>
-          <div className="absolute inset-0 bg-bm-gold/10 blur-2xl rounded-full z-0 transform scale-90"></div>
+          <div className="absolute inset-0 bg-bm-gold/10 rounded-full z-0 scale-90"></div>
         </div>
 
         {/* Content */}
