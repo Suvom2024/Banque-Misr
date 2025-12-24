@@ -24,10 +24,10 @@ export function MultiAgenticExecutiveSummary({
   const strokeDashoffset = circumference - (overallScore / 100) * circumference
 
   return (
-    <div className="bg-bm-white rounded-2xl shadow-card p-6 border-l-8 border-l-bm-gold relative overflow-hidden">
-      <div className="flex flex-col md:flex-row gap-8 items-start">
-        <div className="flex-shrink-0 flex flex-col items-center justify-center bg-bm-light-grey/50 p-6 rounded-xl w-full md:w-64 border border-bm-grey">
-          <div className="relative w-32 h-32 mb-4">
+    <div className="bg-bm-white rounded-2xl shadow-card p-5 border-l-8 border-l-bm-gold relative overflow-hidden">
+      <div className="flex flex-col md:flex-row gap-6 items-start">
+        <div className="flex-shrink-0 flex flex-col items-center justify-center bg-bm-light-grey/50 p-5 rounded-xl w-full md:w-56 border border-bm-grey">
+          <div className="relative w-28 h-28 mb-3">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
               <path
                 className="text-bm-grey"
@@ -46,33 +46,33 @@ export function MultiAgenticExecutiveSummary({
               ></path>
             </svg>
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-              <span className="text-3xl font-extrabold text-bm-text-primary">{overallScore}%</span>
-              <span className="block text-xs font-bold text-bm-gold-dark uppercase tracking-wide">Score</span>
+              <span className="text-2xl font-extrabold text-bm-text-primary">{overallScore}%</span>
+              <span className="block text-[10px] font-bold text-bm-gold-dark uppercase tracking-wide">Score</span>
             </div>
           </div>
           <div className="text-center">
-            <h3 className="font-bold text-bm-maroon text-lg">{rating}</h3>
-            <p className="text-xs text-bm-text-secondary mt-1">{description}</p>
+            <h3 className="font-bold text-bm-maroon text-base">{rating}</h3>
+            <p className="text-[10px] text-bm-text-secondary mt-1">{description}</p>
           </div>
         </div>
-        <div className="flex-1 space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="material-symbols-outlined text-bm-gold-dark text-2xl">auto_awesome</span>
-            <h2 className="text-xl font-bold text-bm-text-primary">Executive Summary</h2>
+        <div className="flex-1 space-y-3">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="material-symbols-outlined text-bm-gold-dark text-xl">auto_awesome</span>
+            <h2 className="text-lg font-bold text-bm-text-primary">Executive Summary</h2>
           </div>
-          <p className="text-bm-text-secondary leading-relaxed">{executiveSummary}</p>
-          <div className="grid grid-cols-3 gap-4 mt-6">
-            <div className="bg-feedback-positive-bg p-3 rounded-lg border border-green-100">
-              <p className="text-xs text-feedback-positive font-bold uppercase mb-1">Top Strength</p>
-              <p className="text-sm font-bold text-bm-text-primary">{topStrength}</p>
+          <p className="text-xs text-bm-text-secondary leading-relaxed">{executiveSummary}</p>
+          <div className="grid grid-cols-3 gap-3 mt-4">
+            <div className="bg-feedback-positive-bg p-2.5 rounded-lg border border-green-100">
+              <p className="text-[10px] text-feedback-positive font-bold uppercase mb-1">Top Strength</p>
+              <p className="text-xs font-bold text-bm-text-primary">{topStrength}</p>
             </div>
-            <div className="bg-feedback-warning-bg p-3 rounded-lg border border-bm-gold/20">
-              <p className="text-xs text-bm-gold-dark font-bold uppercase mb-1">Key Opportunity</p>
-              <p className="text-sm font-bold text-bm-text-primary">{keyOpportunity}</p>
+            <div className="bg-feedback-warning-bg p-2.5 rounded-lg border border-bm-gold/20">
+              <p className="text-[10px] text-bm-gold-dark font-bold uppercase mb-1">Key Opportunity</p>
+              <p className="text-xs font-bold text-bm-text-primary">{keyOpportunity}</p>
             </div>
-            <div className="bg-bm-light-grey p-3 rounded-lg border border-bm-grey">
-              <p className="text-xs text-bm-text-subtle font-bold uppercase mb-1">Duration</p>
-              <p className="text-sm font-bold text-bm-text-primary">{duration}</p>
+            <div className="bg-bm-light-grey p-2.5 rounded-lg border border-bm-grey">
+              <p className="text-[10px] text-bm-text-subtle font-bold uppercase mb-1">Duration</p>
+              <p className="text-xs font-bold text-bm-text-primary">{duration}</p>
             </div>
           </div>
         </div>

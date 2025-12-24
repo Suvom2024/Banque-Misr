@@ -47,14 +47,14 @@ export function SkillTrendAnalysisCard({
   }
 
   return (
-    <div className="lg:col-span-2 bg-white rounded-2xl shadow-card border border-bm-grey/60 p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="lg:col-span-2 bg-white rounded-2xl shadow-card border border-bm-grey/60 p-5">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="font-bold text-bm-text-primary text-lg">Skill Trend Analysis</h3>
-          <p className="text-xs text-bm-text-secondary mt-1">Performance over last 5 sessions</p>
+          <h3 className="font-bold text-bm-text-primary text-sm">Skill Trend Analysis</h3>
+          <p className="text-[10px] text-bm-text-secondary mt-0.5">Performance over last 5 sessions</p>
         </div>
         <select
-          className="text-xs border-bm-grey rounded-lg text-bm-text-secondary focus:ring-bm-gold focus:border-bm-gold bg-white px-3 py-1.5"
+          className="text-[10px] border-bm-grey rounded-lg text-bm-text-secondary focus:ring-bm-gold focus:border-bm-gold bg-white px-2.5 py-1"
           value={timePeriod}
           onChange={(e) => onTimePeriodChange?.(e.target.value)}
         >
@@ -63,22 +63,22 @@ export function SkillTrendAnalysisCard({
           <option>Last Month</option>
         </select>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {skills.map((skill) => {
           const pathData = generateSparklinePath(skill.trend)
           return (
             <div key={skill.skill} className="relative">
-              <div className="flex justify-between items-end mb-2">
-                <span className="text-sm font-bold text-bm-text-secondary">{skill.skill}</span>
-                <div className={`flex items-center gap-1 ${getChangeColor(skill.change)}`}>
-                  <span className="material-symbols-outlined text-sm">{getChangeIcon(skill.change)}</span>
-                  <span className="text-sm font-bold">
+              <div className="flex justify-between items-end mb-1.5">
+                <span className="text-xs font-bold text-bm-text-secondary">{skill.skill}</span>
+                <div className={`flex items-center gap-0.5 ${getChangeColor(skill.change)}`}>
+                  <span className="material-symbols-outlined text-xs">{getChangeIcon(skill.change)}</span>
+                  <span className="text-xs font-bold">
                     {skill.change > 0 ? '+' : ''}
                     {skill.change}%
                   </span>
                 </div>
               </div>
-              <div className="h-24 w-full bg-bm-light-grey/30 rounded-lg border border-bm-grey/30 relative overflow-hidden p-2">
+              <div className="h-20 w-full bg-bm-light-grey/30 rounded-lg border border-bm-grey/30 relative overflow-hidden p-1.5">
                 <svg className="w-full h-full overflow-visible sparkline" preserveAspectRatio="none" viewBox="0 0 100 50">
                   <path d={pathData} fill="none" stroke={skill.color} strokeLinecap="round" strokeWidth="2"></path>
                   {skill.trend.map((value, index) => {
@@ -93,7 +93,7 @@ export function SkillTrendAnalysisCard({
                         cx={x}
                         cy={y}
                         fill={skill.color}
-                        r={index === skill.trend.length - 1 ? 3 : 2}
+                        r={index === skill.trend.length - 1 ? 2.5 : 1.5}
                       ></circle>
                     )
                   })}

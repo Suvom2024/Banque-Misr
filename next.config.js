@@ -41,6 +41,10 @@ const nextConfig = {
         { module: /node_modules\/@supabase/ },
         { file: /node_modules\/@supabase/ },
         { message: /Edge Runtime/ },
+        // Suppress onnxruntime-web warnings (used by VAD library)
+        { module: /node_modules\/onnxruntime-web/ },
+        { file: /node_modules\/onnxruntime-web/ },
+        { message: /Critical dependency.*require function/ },
       ]
     }
 

@@ -19,7 +19,7 @@ interface ChatInterfaceProps {
 
 export function ChatInterface({ messages }: ChatInterfaceProps) {
   return (
-    <div className="flex-grow min-h-0 overflow-y-auto custom-scrollbar p-6 space-y-6 bg-gradient-to-b from-bm-light-grey/30 to-white">
+    <div className="flex-grow min-h-0 overflow-y-auto custom-scrollbar p-4 space-y-4 bg-gradient-to-b from-bm-light-grey/30 to-white">
       {messages.map((message, index) => (
         <div key={message.id}>
           <ChatMessage
@@ -31,7 +31,7 @@ export function ChatInterface({ messages }: ChatInterfaceProps) {
             speakerName={message.speakerName}
           />
           {message.aiSuggestion && index === messages.length - 1 && (
-            <div className="mt-4">
+            <div className="mt-3">
               <AICoachSuggestion suggestion={message.aiSuggestion} />
             </div>
           )}

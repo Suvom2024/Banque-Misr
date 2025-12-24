@@ -21,18 +21,18 @@ export function AssessmentResultsCard({
   const strokeDasharray = `${(scorePercentage / 100) * circumference}, ${circumference}`
 
   return (
-    <div className="bg-white rounded-2xl shadow-card border border-bm-grey/60 p-6 flex flex-col">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="font-bold text-bm-text-primary flex items-center gap-2">
-          <span className="material-symbols-outlined text-bm-maroon">quiz</span>
+    <div className="bg-white rounded-2xl shadow-card border border-bm-grey/60 p-5 flex flex-col">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold text-sm text-bm-text-primary flex items-center gap-1.5">
+          <span className="material-symbols-outlined text-bm-maroon text-base">quiz</span>
           Assessment Results
         </h3>
-        <span className="px-2.5 py-1 rounded-full bg-bm-light-grey text-xs font-bold text-bm-text-secondary border border-bm-grey">
+        <span className="px-2 py-0.5 rounded-full bg-bm-light-grey text-[10px] font-bold text-bm-text-secondary border border-bm-grey">
           {quizCount} Quiz{quizCount !== 1 ? 'zes' : ''}
         </span>
       </div>
-      <div className="flex items-center gap-8 mb-6">
-        <div className="relative w-32 h-32 flex-shrink-0">
+      <div className="flex items-center gap-6 mb-4">
+        <div className="relative w-24 h-24 flex-shrink-0">
           <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
             <circle
               className="text-bm-grey"
@@ -55,21 +55,21 @@ export function AssessmentResultsCard({
             ></circle>
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-2xl font-extrabold text-bm-text-primary">{score}%</span>
-            <span className="text-[10px] font-bold text-bm-text-subtle uppercase">Score</span>
+            <span className="text-xl font-extrabold text-bm-text-primary">{score}%</span>
+            <span className="text-[9px] font-bold text-bm-text-subtle uppercase">Score</span>
           </div>
         </div>
-        <div className="flex-1 space-y-3">
-          <div className="flex justify-between items-center text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-feedback-positive"></div>
+        <div className="flex-1 space-y-2">
+          <div className="flex justify-between items-center text-xs">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-feedback-positive"></div>
               <span className="text-bm-text-secondary font-medium">Correct</span>
             </div>
             <span className="font-bold text-bm-text-primary">{correct}</span>
           </div>
-          <div className="flex justify-between items-center text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-feedback-negative"></div>
+          <div className="flex justify-between items-center text-xs">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-feedback-negative"></div>
               <span className="text-bm-text-secondary font-medium">Incorrect</span>
             </div>
             <span className="font-bold text-bm-text-primary">{incorrect}</span>
@@ -78,9 +78,9 @@ export function AssessmentResultsCard({
       </div>
       <button
         onClick={onReviewAnswers}
-        className="mt-auto w-full py-2.5 rounded-xl border border-bm-grey text-bm-text-secondary font-bold text-sm hover:bg-bm-light-grey hover:border-bm-maroon hover:text-bm-maroon transition-colors flex items-center justify-center gap-2 group"
+        className="mt-auto w-full py-2 rounded-lg border border-bm-grey text-bm-text-secondary font-bold text-xs hover:bg-bm-light-grey hover:border-bm-maroon hover:text-bm-maroon transition-colors flex items-center justify-center gap-1.5 group"
       >
-        <span className="material-symbols-outlined text-lg group-hover:scale-110 transition-transform">visibility</span>
+        <span className="material-symbols-outlined text-sm group-hover:scale-110 transition-transform">visibility</span>
         Review Quiz Answers
       </button>
     </div>

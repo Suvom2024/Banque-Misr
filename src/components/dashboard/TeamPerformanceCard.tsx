@@ -10,6 +10,7 @@ interface TeamPerformanceCardProps {
   trend?: string
   simulationsCount?: number
   aiSummary?: string
+  isLoading?: boolean
 }
 
 export function TeamPerformanceCard({
@@ -17,6 +18,7 @@ export function TeamPerformanceCard({
   trend = '+5% vs Target',
   simulationsCount = 124,
   aiSummary = "Excellent progress. The team has shown a significant uptick in Empathy scores following last week's new curriculum. However, Objection Handling remains a bottleneck in high-pressure scenarios.",
+  isLoading = false,
 }: TeamPerformanceCardProps) {
   const gaugeOptions = useMemo(() => ({
     series: [overallScore],
@@ -94,37 +96,51 @@ export function TeamPerformanceCard({
     }
   }, [aiSummary])
 
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-card p-0 border border-bm-grey/60 overflow-hidden animate-pulse">
+        <div className="p-5 md:p-6 flex flex-col md:flex-row items-center gap-6">
+          <div className="w-64 h-64 bg-gray-200 rounded-full"></div>
+          <div className="flex-grow space-y-3">
+            <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-20 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="bg-white rounded-2xl shadow-card p-0 border border-bm-grey/60 overflow-hidden">
-      <div className="p-6 md:p-8 flex flex-col md:flex-row items-center gap-8">
+      <div className="p-5 md:p-6 flex flex-col md:flex-row items-center gap-6">
         {/* Gauge Chart */}
         <div className="flex-shrink-0 relative">
           <div className="relative z-10">
-            <Chart options={gaugeOptions} series={gaugeOptions.series} type="radialBar" height={280} />
+            <Chart options={gaugeOptions} series={gaugeOptions.series} type="radialBar" height={240} />
           </div>
           <div className="absolute inset-0 bg-bm-gold/10 rounded-full z-0 scale-90"></div>
         </div>
 
         {/* Content */}
-        <div className="flex-grow space-y-4 text-center md:text-left">
+        <div className="flex-grow space-y-3 text-center md:text-left">
           <div>
-            <h2 className="text-2xl font-bold text-bm-text-primary tracking-tighter leading-tight">Team Performance Score</h2>
-            <div className="flex items-center justify-center md:justify-start gap-2 mt-1">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-bold border border-green-200">
-                <span className="material-symbols-outlined text-sm">trending_up</span>
+            <h2 className="text-base font-bold text-bm-text-primary tracking-tight leading-tight">Team Performance Score</h2>
+            <div className="flex items-center justify-center md:justify-start gap-1.5 mt-0.5">
+              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold border border-green-200">
+                <span className="material-symbols-outlined text-xs">trending_up</span>
                 {trend}
               </span>
-              <span className="text-sm text-bm-text-secondary">Based on {simulationsCount} simulations</span>
+              <span className="text-xs text-bm-text-secondary">Based on {simulationsCount} simulations</span>
             </div>
           </div>
 
           {/* AI Summary Box */}
-          <div className="bg-bm-light-grey rounded-xl p-4 border border-bm-grey relative">
-            <div className="absolute -top-3 -left-2 bg-gradient-to-r from-bm-maroon to-bm-maroon-dark text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1">
-              <span className="material-symbols-outlined text-xs">psychology</span>
+          <div className="bg-bm-light-grey rounded-xl p-3 border border-bm-grey relative">
+            <div className="absolute -top-2.5 -left-1.5 bg-gradient-to-r from-bm-maroon to-bm-maroon-dark text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm flex items-center gap-0.5">
+              <span className="material-symbols-outlined text-[10px]">psychology</span>
               AI SUMMARY
             </div>
-            <p className="text-sm text-bm-text-secondary leading-relaxed mt-1">
+            <p className="text-xs text-bm-text-secondary leading-relaxed mt-0.5">
               <span className="font-bold text-bm-maroon">Excellent progress.</span>{' '}
               {formattedSummary ? (
                 <>

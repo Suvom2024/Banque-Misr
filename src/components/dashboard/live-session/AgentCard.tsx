@@ -61,21 +61,21 @@ export function AgentCard({ agentType, title, description, badge, timestamp }: A
         agentType === 'tone' ? 'opacity-75 hover:opacity-100' : ''
       }`}
     >
-      <div className="absolute top-0 right-0 p-3 opacity-100">
+      <div className="absolute top-0 right-0 p-2.5 opacity-100">
         <div className={`${config.iconBg} ${config.iconColor} p-1.5 rounded-lg`}>
-          <span className="material-symbols-outlined text-lg">{config.icon}</span>
+          <span className="material-symbols-outlined text-base">{config.icon}</span>
         </div>
       </div>
-      <div className="p-4 pt-5">
-        <h3 className={`text-xs font-extrabold ${config.labelColor} uppercase tracking-widest mb-2`}>
+      <div className="p-3 pt-4">
+        <h3 className={`text-[10px] font-extrabold ${config.labelColor} uppercase tracking-widest mb-1.5`}>
           {config.label}
         </h3>
-        <p className="text-sm font-bold text-bm-text-primary mb-1">{title}</p>
-        <p className="text-xs text-bm-text-secondary leading-relaxed mb-3 pr-8">{description}</p>
+        <p className="text-xs font-bold text-bm-text-primary mb-1">{title}</p>
+        <p className="text-[10px] text-bm-text-secondary leading-relaxed mb-2.5 pr-7">{description}</p>
         {badge && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <span
-              className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold ring-1 ring-inset ${
+              className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-bold ring-1 ring-inset ${
                 badge.type === 'critical'
                   ? 'bg-red-50 text-bm-maroon ring-red-600/20'
                   : badge.type === 'success'
@@ -83,7 +83,7 @@ export function AgentCard({ agentType, title, description, badge, timestamp }: A
                     : 'bg-yellow-50 text-yellow-700 ring-yellow-600/20'
               }`}
             >
-              <span className="material-symbols-outlined text-[10px]">
+              <span className="material-symbols-outlined text-[9px]">
                 {badge.type === 'critical' ? 'warning' : badge.type === 'success' ? 'check_circle' : 'lightbulb'}
               </span>
               {badge.text}
@@ -91,7 +91,7 @@ export function AgentCard({ agentType, title, description, badge, timestamp }: A
           </div>
         )}
         {timestamp && (
-          <div className="mt-2 text-[10px] text-bm-text-subtle font-medium">{timestamp}</div>
+          <div className="mt-1.5 text-[9px] text-bm-text-subtle font-medium">{timestamp}</div>
         )}
       </div>
     </div>

@@ -21,41 +21,41 @@ export function AICoachingReview({
   onViewResource,
 }: AICoachingReviewProps) {
   return (
-    <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-6">
-      <div className="flex items-center gap-2 mb-5">
-        <span className="material-symbols-outlined text-bm-gold text-2xl">auto_awesome</span>
-        <h3 className="font-bold text-lg text-bm-text-primary tracking-tight leading-tight">AI Coaching</h3>
+    <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="material-symbols-outlined text-bm-gold text-xl">auto_awesome</span>
+        <h3 className="font-bold text-base text-bm-text-primary tracking-tight leading-tight">AI Coaching</h3>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-3">
         {recommendations.map((recommendation) => (
           <div
             key={recommendation.id}
-            className="p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white border border-gray-100 hover:border-bm-gold/50 transition-all group"
+            className="p-3 rounded-xl bg-gradient-to-r from-gray-50 to-white border border-gray-100 hover:border-bm-gold/50 transition-all group"
           >
-            <div className="flex items-start gap-3">
-              <div className="bg-white p-2 rounded-lg shadow-sm text-bm-maroon border border-gray-100">
-                <span className="material-symbols-outlined">{recommendation.icon}</span>
+            <div className="flex items-start gap-2.5">
+              <div className="bg-white p-1.5 rounded-lg shadow-sm text-bm-maroon border border-gray-100">
+                <span className="material-symbols-outlined text-base">{recommendation.icon}</span>
               </div>
               <div>
-                <h4 className="font-bold text-sm text-bm-text-primary">{recommendation.title}</h4>
-                <p className="text-xs text-bm-text-secondary mt-1 leading-snug">{recommendation.description}</p>
+                <h4 className="font-semibold text-xs text-bm-text-primary">{recommendation.title}</h4>
+                <p className="text-[10px] text-bm-text-secondary mt-1 leading-snug">{recommendation.description}</p>
               </div>
             </div>
             {recommendation.actionType === 'drill' ? (
               <button
                 onClick={() => onStartDrill?.(recommendation.id)}
-                className="mt-3 w-full py-2 bg-bm-gold/10 text-bm-maroon hover:bg-bm-gold hover:text-bm-maroon-dark text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1"
+                className="mt-2.5 w-full py-1.5 bg-bm-gold/10 text-bm-maroon hover:bg-bm-gold hover:text-bm-maroon-dark text-[10px] font-bold rounded-lg transition-colors flex items-center justify-center gap-1"
               >
                 {recommendation.actionLabel}
-                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                <span className="material-symbols-outlined text-xs">arrow_forward</span>
               </button>
             ) : (
               <button
                 onClick={() => onViewResource?.(recommendation.id)}
-                className="mt-3 w-full py-2 bg-bm-gold/10 text-bm-maroon hover:bg-bm-gold hover:text-bm-maroon-dark text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1"
+                className="mt-2.5 w-full py-1.5 bg-bm-gold/10 text-bm-maroon hover:bg-bm-gold hover:text-bm-maroon-dark text-[10px] font-bold rounded-lg transition-colors flex items-center justify-center gap-1"
               >
                 {recommendation.actionLabel}
-                <span className="material-symbols-outlined text-sm">visibility</span>
+                <span className="material-symbols-outlined text-xs">visibility</span>
               </button>
             )}
           </div>

@@ -32,18 +32,18 @@ function ConversationTranscriptComponent({ messages, userAvatar }: ConversationT
     overscan: 3, // Render 3 extra messages above/below viewport
   })
   return (
-    <section className="bg-white rounded-2xl shadow-card border border-bm-grey/60 p-6">
-      <div className="flex items-center justify-between mb-4 border-b border-bm-grey/40 pb-4">
-        <h3 className="text-lg font-bold text-bm-text-primary tracking-tight leading-tight flex items-center gap-2">
-          <span className="material-symbols-outlined text-bm-maroon">forum</span>
+    <section className="bg-white rounded-2xl shadow-card border border-bm-grey/60 p-5">
+      <div className="flex items-center justify-between mb-3 border-b border-bm-grey/40 pb-3">
+        <h3 className="text-sm font-bold text-bm-text-primary tracking-tight leading-tight flex items-center gap-1.5">
+          <span className="material-symbols-outlined text-bm-maroon text-base">forum</span>
           Conversation Transcript
         </h3>
-        <div className="flex items-center gap-2 text-xs font-semibold bg-bm-light-grey px-3 py-1.5 rounded-full">
-          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+        <div className="flex items-center gap-1.5 text-[10px] font-semibold bg-bm-light-grey px-2 py-1 rounded-full">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
           Audio Available
         </div>
       </div>
-      <div ref={parentRef} className="max-h-[400px] overflow-y-auto pr-4 scroll-optimized custom-scrollbar">
+      <div ref={parentRef} className="max-h-[400px] overflow-y-auto pr-3 scroll-optimized custom-scrollbar">
         <div
           style={{
             height: `${rowVirtualizer.getTotalSize()}px`,
@@ -58,21 +58,21 @@ function ConversationTranscriptComponent({ messages, userAvatar }: ConversationT
               return (
                 <div
                   key={message.id}
-                  className="flex gap-4 group absolute w-full"
+                  className="flex gap-3 group absolute w-full"
                   style={{
                     height: `${virtualRow.size}px`,
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
                 >
-                  <div className="w-10 h-10 rounded-full bg-bm-maroon flex-shrink-0 flex items-center justify-center shadow-md">
-                    <span className="material-symbols-outlined text-bm-gold text-xl">smart_toy</span>
+                  <div className="w-8 h-8 rounded-full bg-bm-maroon flex-shrink-0 flex items-center justify-center shadow-md">
+                    <span className="material-symbols-outlined text-bm-gold text-base">smart_toy</span>
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold text-bm-text-secondary uppercase">{message.speakerLabel}</span>
-                      <span className="text-[10px] text-bm-text-subtle">{message.timestamp}</span>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="text-[10px] font-bold text-bm-text-secondary uppercase">{message.speakerLabel}</span>
+                      <span className="text-[9px] text-bm-text-subtle">{message.timestamp}</span>
                     </div>
-                    <div className="bg-bm-light-grey p-4 rounded-2xl rounded-tl-none text-bm-text-secondary text-sm leading-relaxed border border-bm-grey/50">
+                    <div className="bg-bm-light-grey p-3 rounded-xl rounded-tl-none text-bm-text-secondary text-xs leading-relaxed border border-bm-grey/50">
                       {message.message}
                     </div>
                   </div>
@@ -83,7 +83,7 @@ function ConversationTranscriptComponent({ messages, userAvatar }: ConversationT
             return (
               <div
                 key={message.id}
-                className="flex gap-4 flex-row-reverse group absolute w-full"
+                className="flex gap-3 flex-row-reverse group absolute w-full"
                 style={{
                   height: `${virtualRow.size}px`,
                   transform: `translateY(${virtualRow.start}px)`,
@@ -92,47 +92,47 @@ function ConversationTranscriptComponent({ messages, userAvatar }: ConversationT
                 {userAvatar ? (
                   <img
                     alt="User"
-                    className="w-10 h-10 rounded-full object-cover shadow-md border border-white"
+                    className="w-8 h-8 rounded-full object-cover shadow-md border border-white"
                     src={userAvatar}
                     loading="lazy"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-bm-grey flex items-center justify-center shadow-md border border-white">
-                    <span className="material-symbols-outlined text-bm-text-secondary">person</span>
+                  <div className="w-8 h-8 rounded-full bg-bm-grey flex items-center justify-center shadow-md border border-white">
+                    <span className="material-symbols-outlined text-bm-text-secondary text-sm">person</span>
                   </div>
                 )}
                 <div className="flex-1 text-right">
-                  <div className="flex items-center justify-end gap-2 mb-1">
-                    <span className="text-[10px] text-bm-text-subtle">{message.timestamp}</span>
-                    <span className="text-xs font-bold text-bm-text-primary uppercase">You</span>
+                  <div className="flex items-center justify-end gap-1.5 mb-0.5">
+                    <span className="text-[9px] text-bm-text-subtle">{message.timestamp}</span>
+                    <span className="text-[10px] font-bold text-bm-text-primary uppercase">You</span>
                     {message.audioAvailable && (
-                      <button className="play-btn w-5 h-5 flex items-center justify-center text-bm-text-subtle transition-colors hover:text-bm-maroon">
-                        <span className="material-symbols-outlined text-lg">play_circle</span>
+                      <button className="play-btn w-4 h-4 flex items-center justify-center text-bm-text-subtle transition-colors hover:text-bm-maroon">
+                        <span className="material-symbols-outlined text-sm">play_circle</span>
                       </button>
                     )}
                   </div>
                   <div
-                    className={`p-4 rounded-2xl rounded-tr-none text-left text-sm leading-relaxed shadow-sm border relative overflow-hidden ${
+                    className={`p-3 rounded-xl rounded-tr-none text-left text-xs leading-relaxed shadow-sm border relative overflow-hidden ${
                       message.feedback?.type === 'strength'
                         ? 'bg-feedback-positive-bg text-bm-text-primary border-feedback-positive/10'
                         : 'bg-feedback-negative-bg text-bm-text-primary border-feedback-negative/10'
                     }`}
                   >
                     <div
-                      className={`absolute left-0 top-0 bottom-0 w-1 ${
+                      className={`absolute left-0 top-0 bottom-0 w-0.5 ${
                         message.feedback?.type === 'strength' ? 'bg-feedback-positive' : 'bg-feedback-negative'
                       }`}
                     ></div>
                     {message.message}
                     {message.feedback && (
                       <div
-                        className={`mt-3 flex items-center gap-2 text-xs font-semibold border-t pt-2 ${
+                        className={`mt-2 flex items-center gap-1.5 text-[10px] font-semibold border-t pt-1.5 ${
                           message.feedback.type === 'strength'
                             ? 'text-feedback-positive border-feedback-positive/10'
                             : 'text-feedback-negative border-feedback-negative/10'
                         }`}
                       >
-                        <span className="material-symbols-filled text-sm">
+                        <span className="material-symbols-filled text-xs">
                           {message.feedback.type === 'strength' ? 'check_circle' : 'lightbulb'}
                         </span>
                         {message.feedback.type === 'strength' ? 'STRENGTH' : 'COACHING'}: {message.feedback.text}

@@ -25,29 +25,29 @@ export function FeaturedScenarioHero({
         }}
       ></div>
       <div className="absolute inset-0 bg-gradient-to-r from-bm-maroon via-bm-maroon/95 to-transparent"></div>
-      <div className="relative z-10 px-8 md:px-12 lg:px-16 py-8 md:py-10 w-full md:w-2/3 lg:w-1/2">
-        <div className="inline-flex items-center gap-2 bg-bm-gold/90 backdrop-blur-sm border border-bm-gold/30 text-bm-maroon-dark px-4 py-2 rounded-lg text-xs md:text-sm font-bold mb-4 shadow-lg">
-          <span className="w-2 h-2 rounded-full bg-bm-maroon-dark"></span>
+      <div className="relative z-10 px-6 md:px-10 lg:px-12 py-6 md:py-8 w-full md:w-2/3 lg:w-1/2">
+        <div className="inline-flex items-center gap-1.5 bg-bm-gold/90 backdrop-blur-sm border border-bm-gold/30 text-bm-maroon-dark px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold mb-3 shadow-lg">
+          <span className="w-1.5 h-1.5 rounded-full bg-bm-maroon-dark"></span>
           Trending Scenario
         </div>
-        <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white leading-tight mb-3 drop-shadow-lg tracking-tight">
+        <h2 className="text-2xl md:text-3xl lg:text-4xl font-black text-white leading-tight mb-2 drop-shadow-lg tracking-tight">
           {title} <br />
           <span className="text-bm-gold">{subtitle}</span>
         </h2>
-        <p className="text-white/90 text-sm md:text-base mb-6 leading-relaxed max-w-lg font-normal">{description}</p>
-        <div className="flex flex-wrap items-center gap-4">
+        <p className="text-white/90 text-xs md:text-sm mb-4 leading-relaxed max-w-lg font-normal">{description}</p>
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={onExplore}
-            className="bg-bm-maroon-dark/80 backdrop-blur-sm text-white border-2 border-white/30 font-semibold py-4 px-6 rounded-xl text-base flex items-center gap-2 shadow-md"
+            className="bg-bm-maroon-dark/80 backdrop-blur-sm text-white border-2 border-white/30 font-semibold py-2.5 px-4 rounded-lg text-xs flex items-center gap-1.5 shadow-md"
           >
             <span>Explore Now</span>
-            <span className="material-symbols-outlined">arrow_forward</span>
+            <span className="material-symbols-outlined text-sm">arrow_forward</span>
           </button>
           <button
             onClick={onPreview}
-            className="bg-bm-maroon-dark/80 backdrop-blur-sm text-white border-2 border-white/30 font-semibold py-4 px-6 rounded-xl text-base flex items-center gap-2 shadow-md"
+            className="bg-bm-maroon-dark/80 backdrop-blur-sm text-white border-2 border-white/30 font-semibold py-2.5 px-4 rounded-lg text-xs flex items-center gap-1.5 shadow-md"
           >
-            <span className="material-symbols-outlined">play_circle</span>
+            <span className="material-symbols-outlined text-sm">play_circle</span>
             Preview
           </button>
         </div>

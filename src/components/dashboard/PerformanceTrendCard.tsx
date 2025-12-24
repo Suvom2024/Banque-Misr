@@ -6,10 +6,8 @@ import dynamic from 'next/dynamic'
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false })
 
 interface PerformanceTrendCardProps {
-  actualData?: number[]
-  targetData?: number[]
-  forecastData?: (number | null)[]
-  categories?: string[]
+  data?: Array<{ date: string; score: number; sessions: number }>
+  isLoading?: boolean
 }
 
 const defaultActualData = [78, 81, 85, 84, 88, 91, 89]
@@ -18,11 +16,25 @@ const defaultForecastData: (number | null)[] = [null, null, null, null, null, nu
 const defaultCategories = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct']
 
 export function PerformanceTrendCard({
-  actualData = defaultActualData,
-  targetData = defaultTargetData,
-  forecastData = defaultForecastData,
-  categories = defaultCategories,
+  data,
+  isLoading = false,
 }: PerformanceTrendCardProps) {
+  // Transform API data to chart format
+  const actualData = data ? data.map((d) => d.score) : defaultActualData
+  const categories = data ? data.map((d) => {
+    const date = new Date(d.date)
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }) : defaultCategories
+  const targetData = defaultTargetData
+  const forecastData = defaultForecastData
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-card p-5 border border-bm-grey/60 animate-pulse">
+        <div className="h-64 bg-gray-200 rounded"></div>
+      </div>
+    )
+  }
   const chartOptions = useMemo(() => ({
     series: [
       {
@@ -118,30 +130,30 @@ export function PerformanceTrendCard({
   }), [actualData, targetData, forecastData, categories])
 
   return (
-    <div className="bg-white rounded-2xl shadow-card p-6 border border-bm-grey/60">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-white rounded-2xl shadow-card p-5 border border-bm-grey/60">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-xl font-bold text-bm-text-primary tracking-tight leading-tight">Performance Trend</h2>
-          <p className="text-sm text-bm-text-secondary mt-0.5 leading-relaxed">Historical data & AI forecast</p>
+          <h2 className="text-base font-bold text-bm-text-primary tracking-tight leading-tight">Performance Trend</h2>
+          <p className="text-xs text-bm-text-secondary mt-0.5 leading-relaxed">Historical data & AI forecast</p>
         </div>
         {/* Legend */}
-        <div className="flex items-center gap-4 text-xs font-semibold">
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-bm-maroon"></span>
+        <div className="flex items-center gap-3 text-[10px] font-semibold">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-bm-maroon"></span>
             Actual
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-bm-gold"></span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-bm-gold"></span>
             Target
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-8 h-0.5 border-t-2 border-dashed border-bm-text-subtle"></span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-6 h-0.5 border-t-2 border-dashed border-bm-text-subtle"></span>
             Forecast
           </div>
         </div>
       </div>
       <div className="w-full">
-        <Chart options={chartOptions} series={chartOptions.series} type="area" height={320} />
+        <Chart options={chartOptions} series={chartOptions.series} type="area" height={280} />
       </div>
     </div>
   )

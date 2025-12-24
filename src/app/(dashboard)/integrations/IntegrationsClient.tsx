@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, memo } from 'react'
+import { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import { IntegrationsHeader } from '@/components/dashboard/IntegrationsHeader'
 import { IntegrationsFilters } from '@/components/dashboard/IntegrationsFilters'
 import { IntegrationCard, Integration } from '@/components/dashboard/IntegrationCard'
@@ -143,9 +143,34 @@ const defaultIntegrations: Integration[] = [
 ]
 
 function IntegrationsClientComponent({ userName, userRole, userAvatar }: IntegrationsClientProps) {
-  const [integrations, setIntegrations] = useState<Integration[]>(defaultIntegrations)
+  const [integrations, setIntegrations] = useState<Integration[]>([])
   const [activeCategory, setActiveCategory] = useState<'all' | 'communication' | 'productivity' | 'servers-apis'>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    fetchIntegrations()
+  }, [])
+
+  const fetchIntegrations = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch('/api/integrations?includeUserConnections=true')
+      
+      if (response.ok) {
+        const data = await response.json()
+        setIntegrations(data)
+      } else {
+        // Fallback to default if API fails
+        setIntegrations(defaultIntegrations)
+      }
+    } catch (error) {
+      console.error('Error fetching integrations:', error)
+      setIntegrations(defaultIntegrations)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   // Filter integrations
   const filteredIntegrations = useMemo(() => {
@@ -171,7 +196,8 @@ function IntegrationsClientComponent({ userName, userRole, userAvatar }: Integra
   const connectedIntegrations = useMemo(() => filteredIntegrations.filter((i) => i.status === 'connected'), [filteredIntegrations])
   const availableIntegrations = useMemo(() => filteredIntegrations.filter((i) => i.status === 'available'), [filteredIntegrations])
 
-  const handleToggle = useCallback((integrationId: string, settingId: string, enabled: boolean) => {
+  const handleToggle = useCallback(async (integrationId: string, settingId: string, enabled: boolean) => {
+    // Update local state immediately for better UX
     setIntegrations((prev) =>
       prev.map((integration) => {
         if (integration.id === integrationId && integration.settings) {
@@ -185,17 +211,92 @@ function IntegrationsClientComponent({ userName, userRole, userAvatar }: Integra
         return integration
       })
     )
+
+    // Update in backend
+    try {
+      const integration = integrations.find((i) => i.id === integrationId)
+      if (integration && integration.settings) {
+        const updatedSettings = integration.settings.map((s) =>
+          s.id === settingId ? { ...s, enabled } : s
+        )
+        const settingsObj = updatedSettings.reduce((acc, s) => {
+          acc[s.id] = s.enabled
+          return acc
+        }, {} as Record<string, boolean>)
+
+        await handleManage(integrationId, settingsObj)
+      }
+    } catch (error) {
+      console.error('Error updating toggle:', error)
+      // Revert on error
+      await fetchIntegrations()
+    }
+  }, [integrations])
+
+  const handleConnect = useCallback(async (integrationId: string) => {
+    try {
+      const response = await fetch(`/api/integrations/${integrationId}/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings: {} }),
+      })
+
+      if (response.ok) {
+        // Refresh integrations list
+        await fetchIntegrations()
+      } else {
+        throw new Error('Failed to connect integration')
+      }
+    } catch (error) {
+      console.error('Error connecting integration:', error)
+      alert('Failed to connect integration. Please try again.')
+    }
   }, [])
 
-  const handleConnect = useCallback((integrationId: string) => {
-    // Handle connect logic
-    console.log('Connecting integration:', integrationId)
-    // In a real app, this would trigger an OAuth flow or API call
+  const handleDisconnect = useCallback(async (integrationId: string) => {
+    if (!confirm('Are you sure you want to disconnect this integration?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/integrations/${integrationId}/disconnect`, {
+        method: 'POST',
+      })
+
+      if (response.ok) {
+        await fetchIntegrations()
+      } else {
+        throw new Error('Failed to disconnect integration')
+      }
+    } catch (error) {
+      console.error('Error disconnecting integration:', error)
+      alert('Failed to disconnect integration. Please try again.')
+    }
   }, [])
 
-  const handleManage = useCallback((integrationId: string) => {
-    // Handle manage logic
-    console.log('Managing integration:', integrationId)
+  const handleManage = useCallback(async (integrationId: string, settings?: Record<string, any>) => {
+    // If settings provided, update them
+    if (settings) {
+      try {
+        const response = await fetch(`/api/integrations/${integrationId}/settings`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ settings }),
+        })
+
+        if (response.ok) {
+          await fetchIntegrations()
+        } else {
+          throw new Error('Failed to update settings')
+        }
+      } catch (error) {
+        console.error('Error updating settings:', error)
+        alert('Failed to update settings. Please try again.')
+      }
+    } else {
+      // Just refresh for manage action
+      await fetchIntegrations()
+    }
   }, [])
 
   const handleSettings = useCallback((integrationId: string) => {
@@ -220,12 +321,12 @@ function IntegrationsClientComponent({ userName, userRole, userAvatar }: Integra
 
         {/* Currently Connected Section */}
         {connectedIntegrations.length > 0 && (
-          <section className="mb-12">
-            <div className="flex items-center gap-3 mb-6">
-              <span className="flex h-3 w-3 rounded-full bg-feedback-positive"></span>
-              <h2 className="text-2xl font-bold tracking-tight text-bm-text-primary">Currently Connected</h2>
+          <section className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="flex h-2 w-2 rounded-full bg-feedback-positive"></span>
+              <h2 className="text-lg font-bold tracking-tight text-bm-text-primary">Currently Connected</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
               {connectedIntegrations.map((integration) => (
                 <IntegrationCard
                   key={integration.id}
@@ -242,13 +343,13 @@ function IntegrationsClientComponent({ userName, userRole, userAvatar }: Integra
         {/* Available Integrations Section */}
         {availableIntegrations.length > 0 && (
           <section>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold tracking-tight text-bm-text-primary">Available Integrations</h2>
-              <a className="text-sm font-bold text-bm-maroon hover:underline" href="#">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold tracking-tight text-bm-text-primary">Available Integrations</h2>
+              <a className="text-xs font-bold text-bm-maroon hover:underline" href="#">
                 Request an Integration
               </a>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4">
               {availableIntegrations.map((integration) => (
                 <IntegrationCard
                   key={integration.id}
@@ -262,10 +363,10 @@ function IntegrationsClientComponent({ userName, userRole, userAvatar }: Integra
 
         {/* No Results */}
         {filteredIntegrations.length === 0 && (
-          <div className="text-center py-12">
-            <span className="material-symbols-outlined text-6xl text-bm-text-subtle mb-4">search_off</span>
-            <p className="text-lg font-medium text-bm-text-secondary mb-2">No integrations found</p>
-            <p className="text-sm text-bm-text-subtle">Try adjusting your filters or search query</p>
+          <div className="text-center py-8">
+            <span className="material-symbols-outlined text-4xl text-bm-text-subtle mb-3">search_off</span>
+            <p className="text-sm font-medium text-bm-text-secondary mb-1">No integrations found</p>
+            <p className="text-xs text-bm-text-subtle">Try adjusting your filters or search query</p>
           </div>
         )}
           </div>

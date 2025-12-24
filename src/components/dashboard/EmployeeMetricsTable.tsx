@@ -22,6 +22,7 @@ interface EmployeeMetricsTableProps {
   onPageChange?: (page: number) => void
   onExportCSV?: () => void
   onViewDetails?: (employeeId: string) => void
+  isLoading?: boolean
 }
 
 // Move default data outside component to prevent re-creation on every render
@@ -98,6 +99,7 @@ const defaultEmployees: EmployeeMetric[] = [
 
 function EmployeeMetricsTableComponent({
   employees = defaultEmployees,
+  isLoading = false,
   currentPage = 1,
   totalPages = 6,
   onPageChange,
@@ -128,21 +130,21 @@ function EmployeeMetricsTableComponent({
 
   return (
     <section>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
-          <h2 className="text-2xl font-bold text-bm-text-primary tracking-tighter leading-tight">Detailed Employee Metrics</h2>
-          <p className="text-bm-text-secondary text-sm mt-1 leading-relaxed">Individual performance data drill-down.</p>
+          <h2 className="text-lg font-bold text-bm-text-primary tracking-tight leading-tight">Detailed Employee Metrics</h2>
+          <p className="text-bm-text-secondary text-xs mt-0.5 leading-relaxed">Individual performance data drill-down.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           <button
-            className="flex items-center gap-2 px-4 py-2 bg-bm-white border border-bm-grey rounded-lg text-sm font-bold text-bm-text-secondary"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-bm-white border border-bm-grey rounded-lg text-xs font-bold text-bm-text-secondary"
             onClick={onExportCSV}
           >
-            <span className="material-symbols-outlined text-lg">download</span>
+            <span className="material-symbols-outlined text-sm">download</span>
             Export CSV
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-bm-white border border-bm-grey rounded-lg text-sm font-bold text-bm-text-secondary">
-            <span className="material-symbols-outlined text-lg">view_column</span>
+          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-bm-white border border-bm-grey rounded-lg text-xs font-bold text-bm-text-secondary">
+            <span className="material-symbols-outlined text-sm">view_column</span>
             Columns
           </button>
         </div>
@@ -153,13 +155,13 @@ function EmployeeMetricsTableComponent({
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 z-10">
               <tr className="bg-bm-light-grey border-b border-bm-grey">
-                <th className="p-5 text-xs font-bold text-bm-text-subtle uppercase tracking-wider">Employee</th>
-                <th className="p-5 text-xs font-bold text-bm-text-subtle uppercase tracking-wider">Avg. Score</th>
-                <th className="p-5 text-xs font-bold text-bm-text-subtle uppercase tracking-wider">Completion</th>
-                <th className="p-5 text-xs font-bold text-bm-text-subtle uppercase tracking-wider">Time Trained</th>
-                <th className="p-5 text-xs font-bold text-bm-text-subtle uppercase tracking-wider">Top Skill</th>
-                <th className="p-5 text-xs font-bold text-bm-text-subtle uppercase tracking-wider">Needs Improvement</th>
-                <th className="p-5 text-xs font-bold text-bm-text-subtle uppercase tracking-wider text-right">Action</th>
+                <th className="p-3 text-[10px] font-bold text-bm-text-subtle uppercase tracking-wider text-left">Employee</th>
+                <th className="p-3 text-[10px] font-bold text-bm-text-subtle uppercase tracking-wider text-left">Avg. Score</th>
+                <th className="p-3 text-[10px] font-bold text-bm-text-subtle uppercase tracking-wider text-left">Completion</th>
+                <th className="p-3 text-[10px] font-bold text-bm-text-subtle uppercase tracking-wider text-left">Time Trained</th>
+                <th className="p-3 text-[10px] font-bold text-bm-text-subtle uppercase tracking-wider text-left">Top Skill</th>
+                <th className="p-3 text-[10px] font-bold text-bm-text-subtle uppercase tracking-wider text-left">Needs Improvement</th>
+                <th className="p-3 text-[10px] font-bold text-bm-text-subtle uppercase tracking-wider text-right">Action</th>
               </tr>
             </thead>
             <tbody
@@ -180,18 +182,18 @@ function EmployeeMetricsTableComponent({
                       transform: `translateY(${virtualRow.start}px)`,
                     }}
                   >
-                  <td className="p-5">
-                    <div className="flex items-center gap-3">
-                      <div className={`h-8 w-8 rounded-full ${employee.avatarColor} flex items-center justify-center text-xs font-bold`}>
+                  <td className="p-3 text-left">
+                    <div className="flex items-center gap-2">
+                      <div className={`h-6 w-6 rounded-full ${employee.avatarColor} flex items-center justify-center text-[10px] font-bold`}>
                         {employee.initials}
                       </div>
-                      <span className="font-bold text-sm text-bm-text-primary">{employee.name}</span>
+                      <span className="font-bold text-xs text-bm-text-primary">{employee.name}</span>
                     </div>
                   </td>
-                  <td className="p-5">
-                    <div className="flex items-center gap-2">
-                      <span className={`font-bold ${getScoreColor(employee.avgScore)}`}>{employee.avgScore}%</span>
-                      <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                  <td className="p-3 text-left">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`font-bold text-xs ${getScoreColor(employee.avgScore)}`}>{employee.avgScore}%</span>
+                      <div className="w-12 h-1 bg-gray-200 rounded-full overflow-hidden">
                         <div
                           className={`h-full ${getScoreBgColor(employee.avgScore)}`}
                           style={{ width: `${employee.avgScore}%` }}
@@ -199,30 +201,30 @@ function EmployeeMetricsTableComponent({
                       </div>
                     </div>
                   </td>
-                  <td className="p-5">
-                    <span className={`text-sm font-medium ${getCompletionColor(employee.completion)}`}>
+                  <td className="p-3 text-left">
+                    <span className={`text-xs font-medium ${getCompletionColor(employee.completion)}`}>
                       {employee.completion}%
                     </span>
                   </td>
-                  <td className="p-5 text-sm text-bm-text-secondary">{employee.timeTrained}</td>
-                  <td className="p-5">
-                    <span className="bg-bm-maroon/5 border border-bm-maroon/20 text-bm-maroon font-semibold py-1 px-3 rounded-full text-xs">
+                  <td className="p-3 text-xs text-bm-text-secondary text-left">{employee.timeTrained}</td>
+                  <td className="p-3 text-left">
+                    <span className="bg-bm-maroon/5 border border-bm-maroon/20 text-bm-maroon font-semibold py-0.5 px-2 rounded-full text-[10px]">
                       {employee.topSkill}
                     </span>
                   </td>
-                  <td className="p-5">
+                  <td className="p-3 text-left">
                     <span
-                      className={`font-semibold py-1 px-3 rounded-full text-xs border ${getNeedsImprovementColor(employee.needsImprovement)}`}
+                      className={`font-semibold py-0.5 px-2 rounded-full text-[10px] border ${getNeedsImprovementColor(employee.needsImprovement)}`}
                     >
                       {employee.needsImprovement}
                     </span>
                   </td>
-                  <td className="p-5 text-right">
+                  <td className="p-3 text-right">
                     <button
-                      className="text-bm-text-subtle p-1.5 rounded-full shadow-sm opacity-0"
+                      className="text-bm-text-subtle p-1 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
                         onClick={() => handleViewDetails(employee.id)}
                     >
-                      <span className="material-symbols-outlined text-xl">visibility</span>
+                      <span className="material-symbols-outlined text-base">visibility</span>
                     </button>
                   </td>
                 </tr>
@@ -232,18 +234,18 @@ function EmployeeMetricsTableComponent({
           </table>
         </div>
         {/* Pagination */}
-        <div className="p-4 bg-bm-light-grey border-t border-bm-grey flex justify-between items-center text-xs text-bm-text-secondary">
+        <div className="p-3 bg-bm-light-grey border-t border-bm-grey flex justify-between items-center text-[10px] text-bm-text-secondary">
           <span>Showing {employees.length} of {totalPages * 4} employees</span>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             <button
-              className="px-3 py-1 bg-white border border-bm-grey rounded disabled:opacity-50"
+              className="px-2.5 py-1 bg-white border border-bm-grey rounded text-[10px] disabled:opacity-50"
               disabled={page === 1}
               onClick={() => handlePageChange(page - 1)}
             >
               Previous
             </button>
             <button
-              className="px-3 py-1 bg-white border border-bm-grey rounded"
+              className="px-2.5 py-1 bg-white border border-bm-grey rounded text-[10px]"
               disabled={page === totalPages}
               onClick={() => handlePageChange(page + 1)}
             >

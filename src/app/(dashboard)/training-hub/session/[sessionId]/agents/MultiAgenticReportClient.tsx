@@ -1,5 +1,7 @@
 'use client'
 
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { MultiAgenticReportHeader } from '@/components/dashboard/MultiAgenticReportHeader'
 import { MultiAgenticExecutiveSummary } from '@/components/dashboard/MultiAgenticExecutiveSummary'
 import { EmpathyAgentCard } from '@/components/dashboard/EmpathyAgentCard'
@@ -7,14 +9,141 @@ import { PolicyComplianceCard } from '@/components/dashboard/PolicyComplianceCar
 import { PacingCoachCard } from '@/components/dashboard/PacingCoachCard'
 import { MultiAgenticAnnotatedTranscript, AnnotatedTranscriptEntry } from '@/components/dashboard/MultiAgenticAnnotatedTranscript'
 import { MultiAgenticNextSteps } from '@/components/dashboard/MultiAgenticNextSteps'
+import type { MultiAgenticReportData } from '@/lib/services/sessions/multiAgenticReportService'
 
 interface MultiAgenticReportClientProps {
   userName: string
   sessionId: string
 }
 
-// Hard-coded multi-agentic report data
-const defaultReportData = {
+export function MultiAgenticReportClient({ userName, sessionId }: MultiAgenticReportClientProps) {
+  const router = useRouter()
+  const [reportData, setReportData] = useState<MultiAgenticReportData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchReportData = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+
+        const response = await fetch(`/api/sessions/${sessionId}/agents`)
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError('Session not found')
+          } else {
+            setError('Failed to load agent report')
+          }
+          return
+        }
+
+        const data = await response.json()
+        setReportData(data)
+      } catch (err) {
+        console.error('Error fetching agent report:', err)
+        setError('Failed to load agent report')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchReportData()
+  }, [sessionId])
+
+  const handleRedoSession = useCallback(async () => {
+    if (!reportData) return
+    
+    // Get scenario ID from session
+    try {
+      const sessionResponse = await fetch(`/api/sessions/${sessionId}`)
+      if (sessionResponse.ok) {
+        const session = await sessionResponse.json()
+        const createResponse = await fetch('/api/training-hub/sessions/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scenarioId: session.scenarioId }),
+        })
+        if (createResponse.ok) {
+          const newSession = await createResponse.json()
+          router.push(`/training-hub/session/${newSession.id}/live`)
+        }
+      }
+    } catch (error) {
+      console.error('Error redoing session:', error)
+    }
+  }, [router, sessionId, reportData])
+
+  const handleTakeQuiz = useCallback(() => {
+    router.push(`/training-hub/session/${sessionId}/live/assessment`)
+  }, [router, sessionId])
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex flex-col bg-bm-light-grey overflow-hidden">
+        <MultiAgenticReportHeader
+          userName={userName}
+          sessionTitle="Loading..."
+          sessionDate=""
+          sessionTime=""
+          sessionNumber=""
+        />
+        <main className="flex-1 overflow-y-auto flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-bm-maroon mx-auto mb-4"></div>
+            <p className="text-bm-text-secondary">Loading agent report...</p>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (error || !reportData) {
+    return (
+      <div className="flex-1 flex flex-col bg-bm-light-grey overflow-hidden">
+        <MultiAgenticReportHeader
+          userName={userName}
+          sessionTitle="Error"
+          sessionDate=""
+          sessionTime=""
+          sessionNumber=""
+        />
+        <main className="flex-1 overflow-y-auto flex items-center justify-center">
+          <div className="text-center">
+            <span className="material-symbols-outlined text-6xl text-red-500 mb-4">error</span>
+            <p className="text-bm-text-primary font-medium mb-2">{error || 'Report not found'}</p>
+            <button
+              onClick={() => router.push(`/training-hub/session/${sessionId}`)}
+              className="mt-4 px-4 py-2 bg-bm-maroon text-white rounded-lg hover:bg-bm-maroon-dark transition-colors"
+            >
+              Back to Session Report
+            </button>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  // Transform transcript to match component interface
+  const transcript: AnnotatedTranscriptEntry[] = reportData.transcript.map((t) => ({
+    id: t.id,
+    speaker: t.speaker,
+    message: t.message,
+    timestamp: t.timestamp,
+    highlights: t.highlights,
+  }))
+
+  // Default resources (can be enhanced later)
+  const resources = [
+    {
+      id: '1',
+      title: 'Policy #304: Interest Rates',
+      type: 'document' as const,
+      duration: '5 mins read',
+      icon: 'description',
+    },
+  ]
   title: 'High-Value Client Negotiation',
   date: 'Oct 24, 2023',
   time: '10:45 AM',
@@ -132,17 +261,6 @@ const defaultReportData = {
   ],
 }
 
-export function MultiAgenticReportClient({ userName, sessionId }: MultiAgenticReportClientProps) {
-  const reportData = defaultReportData
-
-  const handleRedoSession = () => {
-    console.log('Redo session:', sessionId)
-  }
-
-  const handleTakeQuiz = () => {
-    console.log('Take quiz for session:', sessionId)
-  }
-
   return (
     <div className="flex-1 flex flex-col bg-bm-light-grey overflow-hidden">
       <MultiAgenticReportHeader
@@ -196,11 +314,11 @@ export function MultiAgenticReportClient({ userName, sessionId }: MultiAgenticRe
 
             {/* Sidebar */}
             <div className="col-span-12 lg:col-span-4 space-y-8 flex flex-col">
-              <MultiAgenticAnnotatedTranscript entries={reportData.transcript} />
+              <MultiAgenticAnnotatedTranscript entries={transcript} />
               <MultiAgenticNextSteps
                 onRedoSession={handleRedoSession}
                 onTakeQuiz={handleTakeQuiz}
-                resources={reportData.resources}
+                resources={resources}
               />
             </div>
           </div>

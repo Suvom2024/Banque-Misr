@@ -1,5 +1,7 @@
 'use client'
 
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { SessionReportHeader } from '@/components/dashboard/SessionReportHeader'
 import { AIExecutiveSummary } from '@/components/dashboard/AIExecutiveSummary'
 import { CompetencyBreakdown, Competency } from '@/components/dashboard/CompetencyBreakdown'
@@ -7,170 +9,154 @@ import { RecommendedCoaching, CoachingRecommendation } from '@/components/dashbo
 import { PreviousBestComparison, ComparisonMetric } from '@/components/dashboard/PreviousBestComparison'
 import { ConversationTranscript, TranscriptMessage } from '@/components/dashboard/ConversationTranscript'
 import { SessionActionButtons } from '@/components/dashboard/SessionActionButtons'
+import type { SessionReportData } from '@/lib/services/sessions/sessionReportService'
 
 interface SessionReportClientProps {
   userName: string
   sessionId: string
 }
 
-// Hard-coded session data
-const defaultSessionData = {
-  title: 'Performance Review Practice',
-  overallScore: 85,
-  trend: '+5% vs Last',
-  aiSummary:
-    "You demonstrated exceptional empathy and rapport building. Your ability to acknowledge the employee's feelings created a safe environment for feedback. While your clarity was strong, focusing on objection handling techniques like the A-R-C model will refine your approach to resistance.",
-  competencies: [
-    {
-      id: '1',
-      name: 'Empathy',
-      icon: 'favorite',
-      score: 92,
-      feedback: 'Consistently validated feelings using phrases like "I understand why..."',
-      feedbackType: 'positive' as const,
-    },
-    {
-      id: '2',
-      name: 'Clarity',
-      icon: 'record_voice_over',
-      score: 88,
-      feedback: 'Instructions were direct. Minimal filler words used.',
-      feedbackType: 'positive' as const,
-    },
-    {
-      id: '3',
-      name: 'Objection Handling',
-      icon: 'psychology_alt',
-      score: 65,
-      feedback: 'Avoid dismissing concerns immediately. Pause before responding.',
-      feedbackType: 'neutral' as const,
-    },
-    {
-      id: '4',
-      name: 'Rapport Building',
-      icon: 'handshake',
-      score: 95,
-      feedback: "Opened with genuine interest in the employee's project status.",
-      feedbackType: 'positive' as const,
-    },
-  ] as Competency[],
-  recommendedCoaching: [
-    {
-      id: '1',
-      title: 'Collaborative Goal Setting',
-      description: 'You jumped to solutions quickly. Practice asking "What do you think creates a solution?" to engage the employee.',
-      actionType: 'scenario' as const,
-      actionLabel: 'Start Scenario',
-    },
-    {
-      id: '2',
-      title: 'The A-R-C Method',
-      description: 'Learn the Acknowledge, Respond, Confirm framework to handle objections gracefully.',
-      actionType: 'resource' as const,
-      actionLabel: 'View Resource',
-    },
-  ] as CoachingRecommendation[],
-  previousBest: [
-    {
-      name: 'Overall Score',
-      current: 85,
-      previous: 78,
-      change: 7,
-      changeType: 'increase' as const,
-    },
-    {
-      name: 'Empathy',
-      current: 92,
-      previous: 87,
-      change: 5,
-      changeType: 'increase' as const,
-    },
-    {
-      name: 'Objection Handling',
-      current: 65,
-      previous: 68,
-      change: 3,
-      changeType: 'decrease' as const,
-    },
-  ] as ComparisonMetric[],
-  transcript: [
-    {
-      id: '1',
-      speaker: 'ai-coach',
-      speakerLabel: 'AI Coach (Intro)',
-      timestamp: '00:05',
-      message:
-        "Let's begin. Imagine Maria just expressed frustration about her workload. How do you respond to acknowledge her feelings without overcommitting?",
-    },
-    {
-      id: '2',
-      speaker: 'user',
-      speakerLabel: 'You',
-      timestamp: '00:15',
-      message:
-        "Maria, I hear you. It sounds like the current project timeline is putting a lot of pressure on you, and I appreciate you being honest about it.",
-      feedback: {
-        type: 'strength' as const,
-        text: 'Excellent validation technique.',
-      },
-      audioAvailable: true,
-    },
-    {
-      id: '3',
-      speaker: 'user',
-      speakerLabel: 'You',
-      timestamp: '00:42',
-      message: "Maybe we can just move the deadline. I'll tell the client tomorrow.",
-      feedback: {
-        type: 'coaching' as const,
-        text: 'Too quick to solve. Explore options with her first.',
-      },
-      audioAvailable: true,
-    },
-  ] as TranscriptMessage[],
-}
-
 export function SessionReportClient({ userName, sessionId }: SessionReportClientProps) {
-  const sessionData = defaultSessionData
+  const router = useRouter()
+  const [sessionData, setSessionData] = useState<SessionReportData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleViewFullMetrics = () => {
-    // Handle view full metrics
-    console.log('View full metrics')
-  }
+  useEffect(() => {
+    const fetchSessionData = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
 
-  const handleStartScenario = (id: string) => {
-    // Handle start scenario
-    console.log('Start scenario:', id)
-  }
+        const response = await fetch(`/api/sessions/${sessionId}`)
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError('Session not found')
+          } else {
+            setError('Failed to load session data')
+          }
+          return
+        }
 
-  const handleViewResource = (id: string) => {
-    // Handle view resource
+        const data = await response.json()
+        setSessionData(data)
+      } catch (err) {
+        console.error('Error fetching session data:', err)
+        setError('Failed to load session data')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchSessionData()
+  }, [sessionId])
+
+  const handleViewFullMetrics = useCallback(() => {
+    router.push(`/training-hub/session/${sessionId}/snapshot`)
+  }, [router, sessionId])
+
+  const handleStartScenario = useCallback(async (scenarioId: string) => {
+    try {
+      const response = await fetch('/api/training-hub/sessions/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scenarioId }),
+      })
+
+      if (response.ok) {
+        const session = await response.json()
+        router.push(`/training-hub/session/${session.id}/live`)
+      }
+    } catch (error) {
+      console.error('Error starting scenario:', error)
+    }
+  }, [router])
+
+  const handleViewResource = useCallback((id: string) => {
     console.log('View resource:', id)
+    // TODO: Implement resource viewing
+  }, [])
+
+  const handleRedoSession = useCallback(async () => {
+    if (!sessionData) return
+    
+    try {
+      const response = await fetch('/api/training-hub/sessions/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scenarioId: sessionData.scenarioId }),
+      })
+
+      if (response.ok) {
+        const session = await response.json()
+        router.push(`/training-hub/session/${session.id}/live`)
+      }
+    } catch (error) {
+      console.error('Error redoing session:', error)
+    }
+  }, [router, sessionData])
+
+  const handleSetGoal = useCallback(() => {
+    router.push('/development-goals')
+  }, [router])
+
+  const handleExploreScenarios = useCallback(() => {
+    router.push('/training-hub')
+  }, [router])
+
+  const handleShareReport = useCallback(() => {
+    if (navigator.share) {
+      navigator.share({
+        title: `Session Report: ${sessionData?.scenarioTitle}`,
+        text: `Check out my training session results!`,
+        url: window.location.href,
+      }).catch(() => {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(window.location.href)
+      })
+    } else {
+      navigator.clipboard.writeText(window.location.href)
+    }
+  }, [sessionData])
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex flex-col h-screen overflow-hidden bg-bm-light-grey">
+        <SessionReportHeader userName={userName} sessionTitle="Loading..." />
+        <main className="flex-grow overflow-y-auto w-full flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-bm-maroon mx-auto mb-4"></div>
+            <p className="text-bm-text-secondary">Loading session report...</p>
+          </div>
+        </main>
+      </div>
+    )
   }
 
-  const handleRedoSession = () => {
-    // Handle redo session
-    console.log('Redo session')
-  }
-
-  const handleSetGoal = () => {
-    // Handle set goal
-    console.log('Set goal')
-  }
-
-  const handleExploreScenarios = () => {
-    // Handle explore scenarios
-    console.log('Explore scenarios')
-  }
-
-  const handleShareReport = () => {
-    // Handle share report
-    console.log('Share report')
+  if (error || !sessionData) {
+    return (
+      <div className="flex-1 flex flex-col h-screen overflow-hidden bg-bm-light-grey">
+        <SessionReportHeader userName={userName} sessionTitle="Error" />
+        <main className="flex-grow overflow-y-auto w-full flex items-center justify-center">
+          <div className="text-center">
+            <span className="material-symbols-outlined text-6xl text-red-500 mb-4">error</span>
+            <p className="text-bm-text-primary font-medium mb-2">{error || 'Session not found'}</p>
+            <button
+              onClick={() => router.push('/training-hub')}
+              className="mt-4 px-4 py-2 bg-bm-maroon text-white rounded-lg hover:bg-bm-maroon-dark transition-colors"
+            >
+              Back to Training Hub
+            </button>
+          </div>
+        </main>
+      </div>
+    )
   }
 
   return (
     <div className="flex-1 flex flex-col h-screen overflow-hidden bg-bm-light-grey">
-      <SessionReportHeader userName={userName} sessionTitle={sessionData.title} />
+      <SessionReportHeader userName={userName} sessionTitle={sessionData.scenarioTitle} />
 
       <main className="flex-grow overflow-y-auto w-full">
         <div className="px-6 lg:px-8 py-6 lg:py-8">
@@ -181,8 +167,8 @@ export function SessionReportClient({ userName, sessionId }: SessionReportClient
             {/* AI Executive Summary */}
             <AIExecutiveSummary
               overallScore={sessionData.overallScore}
-              trend={sessionData.trend}
-              aiSummary={sessionData.aiSummary}
+              trend={sessionData.trend || ''}
+              aiSummary={sessionData.aiSummary || ''}
             />
 
             {/* Competency Breakdown */}

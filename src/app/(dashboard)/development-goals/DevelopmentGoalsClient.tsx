@@ -1,11 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { DevelopmentGoalsHeader } from '@/components/dashboard/DevelopmentGoalsHeader'
 import { DefineNewGoalCard } from '@/components/dashboard/DefineNewGoalCard'
-import { GoalCard } from '@/components/dashboard/GoalCard'
-import { RecommendedTrainingPathCard } from '@/components/dashboard/RecommendedTrainingPathCard'
-import { CompletedGoalsSection } from '@/components/dashboard/CompletedGoalsSection'
+import { GoalCard, Goal } from '@/components/dashboard/GoalCard'
+import { RecommendedTrainingPathCard, TrainingModule } from '@/components/dashboard/RecommendedTrainingPathCard'
+import { CompletedGoalsSection, CompletedGoal } from '@/components/dashboard/CompletedGoalsSection'
+import type { DevelopmentGoal } from '@/lib/services/development-goals/goalsService'
 
 interface DevelopmentGoalsClientProps {
   userName: string
@@ -13,85 +16,196 @@ interface DevelopmentGoalsClientProps {
   userAvatar?: string
 }
 
-const defaultGoals = [
-  {
-    id: '1',
-    title: 'Advanced Negotiation',
-    targetDate: 'Oct 30, 2023',
-    description: 'Master complex negotiation tactics focusing on win-win outcomes in high-stakes corporate accounts.',
-    progress: 72,
-    aiInsight: 'Keep practicing the "Anchor & Adjust" technique. Your recent scores show a 12% improvement!',
-    trend: [60, 65, 68, 70, 72],
-    icon: 'handshake',
-  },
-  {
-    id: '2',
-    title: 'Customer Empathy',
-    targetDate: 'Nov 15, 2023',
-    description: 'Consistently demonstrate empathy in 90% of customer interactions, specifically handling complaints.',
-    progress: 45,
-    aiInsight: 'You tend to rush solutions. Try the "Pause & Validate" method in your next 3 scenarios.',
-    trend: [40, 42, 43, 44, 45],
-    icon: 'support_agent',
-  },
-]
-
-const defaultTrainingModules = [
-  {
-    id: '1',
-    type: 'scenario' as const,
-    title: 'High-Stakes Negotiation',
-    description: 'Practice anchoring techniques with a simulated corporate client.',
-    duration: '15 min',
-    difficulty: 'Advanced',
-    isHighImpact: true,
-  },
-  {
-    id: '2',
-    type: 'micro-learning' as const,
-    title: 'The Art of Active Listening',
-    description: 'A quick interactive module on the 3 levels of listening.',
-    duration: '5 min',
-    difficulty: 'Intermediate',
-  },
-  {
-    id: '3',
-    type: 'drill' as const,
-    title: 'Complaint Handling Drill',
-    description: 'Rapid-fire responses to common customer complaints.',
-    duration: '10 min',
-    difficulty: 'All Levels',
-  },
-]
-
-const defaultCompletedGoals = [
-  { id: '1', title: 'Basic Compliance', completedDate: 'Feb 12' },
-  { id: '2', title: 'Cross-Selling Intro', completedDate: 'Mar 20' },
-  { id: '3', title: 'System Onboarding', completedDate: 'Jan 15' },
-]
-
 export function DevelopmentGoalsClient({ userName, userRole, userAvatar }: DevelopmentGoalsClientProps) {
-  const [goals, setGoals] = useState(defaultGoals)
+  const router = useRouter()
+  const [activeGoals, setActiveGoals] = useState<DevelopmentGoal[]>([])
+  const [completedGoals, setCompletedGoals] = useState<DevelopmentGoal[]>([])
+  const [recommendedModules, setRecommendedModules] = useState<TrainingModule[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isGenerating, setIsGenerating] = useState(false)
 
-  const handleGenerateGoal = (goalText: string) => {
-    console.log('Generating goal from:', goalText)
-    // In a real app, this would call an API to generate a S.M.A.R.T. goal
+  useEffect(() => {
+    fetchGoals()
+  }, [])
+
+  const fetchGoals = async () => {
+    try {
+      setIsLoading(true)
+
+      const [activeRes, completedRes] = await Promise.all([
+        fetch('/api/development-goals?status=active'),
+        fetch('/api/development-goals?status=completed'),
+      ])
+
+      const active = activeRes.ok ? await activeRes.json() : []
+      const completed = completedRes.ok ? await completedRes.json() : []
+
+      setActiveGoals(active)
+      setCompletedGoals(completed)
+
+      // Get recommended training path for first active goal
+      if (active.length > 0) {
+        fetchTrainingPath(active[0].id)
+      }
+    } catch (error) {
+      console.error('Error fetching goals:', error)
+      toast.error('Failed to load goals')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleEditGoal = (id: string) => {
-    console.log('Editing goal:', id)
+  const fetchTrainingPath = async (goalId: string) => {
+    try {
+      const response = await fetch(`/api/development-goals/${goalId}/training-path`)
+      if (response.ok) {
+        const modules = await response.json()
+        setRecommendedModules(modules)
+      }
+    } catch (error) {
+      console.error('Error fetching training path:', error)
+    }
   }
 
-  const handleViewProgress = (id: string) => {
-    console.log('Viewing progress for goal:', id)
-  }
+  const handleGenerateGoal = useCallback(async (goalText: string) => {
+    if (!goalText.trim()) {
+      toast.error('Please enter a goal description')
+      return
+    }
 
-  const handleCustomizePath = () => {
-    console.log('Customizing training path')
-  }
+    try {
+      setIsGenerating(true)
 
-  const handleStartModule = (id: string) => {
-    console.log('Starting module:', id)
+      const response = await fetch('/api/development-goals/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ goalText }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to generate goal')
+      }
+
+      const newGoal = await response.json()
+      setActiveGoals((prev) => [newGoal, ...prev])
+      toast.success('Goal created successfully!')
+      
+      // Fetch training path for new goal
+      fetchTrainingPath(newGoal.id)
+    } catch (error) {
+      console.error('Error generating goal:', error)
+      toast.error('Failed to generate goal. Please try again.')
+    } finally {
+      setIsGenerating(false)
+    }
+  }, [])
+
+  const handleEditGoal = useCallback(async (id: string, updates: Partial<Goal>) => {
+    try {
+      const response = await fetch(`/api/development-goals/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      })
+
+      if (response.ok) {
+        await fetchGoals()
+        toast.success('Goal updated successfully!')
+      } else {
+        throw new Error('Failed to update goal')
+      }
+    } catch (error) {
+      console.error('Error updating goal:', error)
+      toast.error('Failed to update goal')
+    }
+  }, [])
+
+  const handleViewProgress = useCallback((id: string) => {
+    router.push(`/training-hub?goal=${id}`)
+  }, [router])
+
+  const handleDeleteGoal = useCallback(async (id: string) => {
+    if (!confirm('Are you sure you want to delete this goal?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/development-goals/${id}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        await fetchGoals()
+        toast.success('Goal deleted successfully!')
+      } else {
+        throw new Error('Failed to delete goal')
+      }
+    } catch (error) {
+      console.error('Error deleting goal:', error)
+      toast.error('Failed to delete goal')
+    }
+  }, [])
+
+  const handleCustomizePath = useCallback(() => {
+    router.push('/training-hub')
+  }, [router])
+
+  const handleStartModule = useCallback(async (module: TrainingModule) => {
+    if (module.type === 'scenario' && module.scenarioId) {
+      try {
+        const response = await fetch('/api/training-hub/sessions/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scenarioId: module.scenarioId }),
+        })
+
+        if (response.ok) {
+          const session = await response.json()
+          router.push(`/training-hub/session/${session.id}/live`)
+        } else {
+          throw new Error('Failed to start scenario')
+        }
+      } catch (error) {
+        console.error('Error starting module:', error)
+        toast.error('Failed to start module')
+      }
+    } else {
+      toast.info('This module type is coming soon!')
+    }
+  }, [router])
+
+  // Transform DevelopmentGoal to Goal format
+  const transformGoal = (goal: DevelopmentGoal): Goal => ({
+    id: goal.id,
+    title: goal.title,
+    description: goal.description || '',
+    targetDate: goal.targetDate || '',
+    progress: goal.progress,
+    status: goal.status,
+    aiInsight: goal.aiInsight || '',
+    trend: goal.trend,
+    icon: goal.icon || undefined,
+  })
+
+  // Transform completed goals
+  const transformedCompletedGoals: CompletedGoal[] = completedGoals.map((goal) => ({
+    id: goal.id,
+    title: goal.title,
+    completedDate: goal.updatedAt ? new Date(goal.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A',
+  }))
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
+        <DevelopmentGoalsHeader userName={userName} userRole={userRole} userAvatar={userAvatar} />
+        <main className="flex-grow overflow-y-auto flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-bm-maroon mx-auto mb-4"></div>
+            <p className="text-bm-text-secondary">Loading goals...</p>
+          </div>
+        </main>
+      </div>
+    )
   }
 
   return (
@@ -106,30 +220,41 @@ export function DevelopmentGoalsClient({ userName, userRole, userAvatar }: Devel
             <DefineNewGoalCard onGenerateGoal={handleGenerateGoal} />
 
             {/* Active Goals */}
+            {activeGoals.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in-up animate-delay-100">
-              {goals.map((goal) => (
+                {activeGoals.map((goal) => (
                 <GoalCard
                   key={goal.id}
-                  {...goal}
-                  onEdit={handleEditGoal}
+                    {...transformGoal(goal)}
+                    onEdit={(id) => handleEditGoal(id, {})}
                   onViewProgress={handleViewProgress}
                 />
               ))}
             </div>
+            ) : (
+              <div className="text-center py-12 bg-white rounded-2xl shadow-card border border-white">
+                <span className="material-symbols-outlined text-6xl text-bm-text-subtle mb-4">flag</span>
+                <p className="text-bm-text-secondary font-medium">No active goals yet</p>
+                <p className="text-sm text-bm-text-subtle mt-2">Create your first goal above to get started!</p>
+              </div>
+            )}
 
             {/* Recommended Training Path */}
+            {recommendedModules.length > 0 && (
             <RecommendedTrainingPathCard
-              modules={defaultTrainingModules}
+                modules={recommendedModules}
               onCustomizePath={handleCustomizePath}
               onStartModule={handleStartModule}
             />
+            )}
 
             {/* Completed Goals */}
-            <CompletedGoalsSection goals={defaultCompletedGoals} />
+            {completedGoals.length > 0 && (
+              <CompletedGoalsSection goals={transformedCompletedGoals} />
+            )}
           </div>
         </div>
       </main>
     </div>
   )
 }
-

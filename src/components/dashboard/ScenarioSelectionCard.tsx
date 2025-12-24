@@ -26,8 +26,14 @@ interface ScenarioSelectionCardProps {
 }
 
 function ScenarioSelectionCardComponent({ scenario, onSelect }: ScenarioSelectionCardProps) {
+  // Safety check
+  if (!scenario || !scenario.id || !scenario.title) {
+    return null
+  }
+
   const difficultyIcon = useMemo(() => {
-    switch (scenario.difficulty) {
+    const diff = scenario.difficulty || 'Intermediate'
+    switch (diff) {
       case 'Advanced':
         return 'signal_cellular_alt'
       case 'Intermediate':
@@ -79,51 +85,51 @@ function ScenarioSelectionCardComponent({ scenario, onSelect }: ScenarioSelectio
 
         {/* Recommended Badge */}
         {scenario.isRecommended && (
-          <div className="absolute top-4 left-4 z-20">
-            <span className="px-3 py-1 rounded-full bg-bm-gold text-bm-maroon-dark text-xs font-bold uppercase tracking-wide shadow-sm">
+          <div className="absolute top-3 left-3 z-20">
+            <span className="px-2 py-0.5 rounded-full bg-bm-gold text-bm-maroon-dark text-[10px] font-bold uppercase tracking-wide shadow-sm">
               Recommended
             </span>
           </div>
         )}
 
         {/* Bookmark Button */}
-        <div className="absolute top-4 right-4 z-20">
+        <div className="absolute top-3 right-3 z-20">
           <button
-            className="p-2 rounded-full bg-bm-white/20 backdrop-blur-md text-white"
+            className="p-1.5 rounded-full bg-bm-white/20 backdrop-blur-md text-white"
             onClick={(e) => {
               e.stopPropagation()
               // Handle bookmark
             }}
           >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>
+            <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 0" }}>
               bookmark_border
             </span>
           </button>
         </div>
 
         {/* Title Overlay */}
-        <div className="absolute bottom-4 left-4 z-20 text-white">
-          <h3 className="text-xl font-bold leading-tight tracking-tight">{scenario.title}</h3>
-          <p className="text-bm-white/80 text-sm mt-1 leading-relaxed">{scenario.subtitle}</p>
+        <div className="absolute bottom-3 left-3 z-20 text-white">
+          <h3 className="text-base font-bold leading-tight tracking-tight">{scenario.title}</h3>
+          <p className="text-bm-white/80 text-xs mt-0.5 leading-relaxed">{scenario.subtitle}</p>
         </div>
       </div>
 
       {/* Card Content */}
-      <div className="p-5 flex-1 flex flex-col">
+      <div className="p-4 flex-1 flex flex-col">
         {/* Metadata Badges */}
-        <div className="flex items-center gap-4 mb-4 text-xs font-semibold text-bm-text-secondary">
-          <div className="flex items-center gap-1.5 bg-bm-light-grey px-2 py-1 rounded-md">
-            <span className="material-symbols-outlined text-base text-bm-maroon">timer</span>
+        <div className="flex items-center gap-2 mb-3 text-[10px] font-semibold text-bm-text-secondary">
+          <div className="flex items-center gap-1 bg-bm-light-grey px-1.5 py-0.5 rounded-md">
+            <span className="material-symbols-outlined text-xs text-bm-maroon">timer</span>
             <span>{scenario.duration}</span>
           </div>
-          <div className="flex items-center gap-1.5 bg-bm-light-grey px-2 py-1 rounded-md">
-            <span className={`material-symbols-outlined text-base ${scenario.isSelected ? 'text-bm-maroon' : 'text-bm-text-subtle'}`}>
+          <div className="flex items-center gap-1 bg-bm-light-grey px-1.5 py-0.5 rounded-md">
+            <span className={`material-symbols-outlined text-xs ${scenario.isSelected ? 'text-bm-maroon' : 'text-bm-text-subtle'}`}>
               {difficultyIcon}
             </span>
-            <span>{scenario.difficulty}</span>
+            <span>{scenario.difficulty || 'Intermediate'}</span>
           </div>
-          <div className="flex items-center gap-1.5 bg-bm-light-grey px-2 py-1 rounded-md">
-            <span className={`material-symbols-outlined text-base ${scenario.isSelected ? 'text-bm-maroon' : 'text-bm-text-subtle'}`}>
+          <div className="flex items-center gap-1 bg-bm-light-grey px-1.5 py-0.5 rounded-md">
+            <span className={`material-symbols-outlined text-xs ${scenario.isSelected ? 'text-bm-maroon' : 'text-bm-text-subtle'}`}>
               {skillIcon}
             </span>
             <span>{scenario.skill}</span>
@@ -131,20 +137,20 @@ function ScenarioSelectionCardComponent({ scenario, onSelect }: ScenarioSelectio
         </div>
 
         {/* Description */}
-        <p className="text-sm text-bm-text-secondary leading-relaxed mb-4 line-clamp-2">{scenario.description}</p>
+        <p className="text-xs text-bm-text-secondary leading-relaxed mb-3 line-clamp-2">{scenario.description}</p>
 
         {/* Footer */}
-        <div className="mt-auto pt-4 border-t border-bm-grey flex justify-between items-center">
-          <span className="text-xs font-medium text-bm-text-subtle">
+        <div className="mt-auto pt-3 border-t border-bm-grey flex justify-between items-center">
+          <span className="text-[10px] font-medium text-bm-text-subtle">
             AI Coach: <span className={scenario.aiCoach === 'Active' ? 'text-bm-maroon' : 'text-bm-text-secondary'}>{scenario.aiCoach}</span>
           </span>
           {scenario.isSelected ? (
-            <span className="text-bm-maroon text-sm font-bold flex items-center gap-1 opacity-100">
-              Selected <span className="material-symbols-outlined text-lg">check_circle</span>
+            <span className="text-bm-maroon text-xs font-bold flex items-center gap-1 opacity-100">
+              Selected <span className="material-symbols-outlined text-sm">check_circle</span>
             </span>
           ) : (
-            <span className="text-bm-text-subtle text-sm font-medium flex items-center gap-1">
-              Select Scenario <span className="material-symbols-outlined text-lg">arrow_forward</span>
+            <span className="text-bm-text-subtle text-xs font-medium flex items-center gap-1">
+              Select <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </span>
           )}
         </div>

@@ -26,95 +26,98 @@ export function VisualizationHeader({
   lastSaved,
 }: VisualizationHeaderProps) {
   return (
-    <header className="h-20 flex-shrink-0 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between px-6 lg:px-8 z-20">
-      <div className="flex items-center gap-4">
-        <button className="text-bm-text-secondary hover:text-bm-maroon transition-colors p-2 rounded-full hover:bg-bm-light-grey">
-          <span className="material-symbols-outlined">arrow_back</span>
+    <header className="h-16 flex-shrink-0 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between px-4 lg:px-6 z-20">
+      <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0 min-w-0 max-w-[40%]">
+        <button className="text-bm-text-secondary hover:text-bm-maroon transition-colors p-1.5 rounded-full hover:bg-bm-light-grey flex-shrink-0">
+          <span className="material-symbols-outlined text-base lg:text-lg">arrow_back</span>
         </button>
-        <div>
-          <h1 className="text-2xl font-bold text-bm-text-primary tracking-tight">
+        <div className="min-w-0">
+          <h1 className="text-base lg:text-lg font-bold text-bm-text-primary tracking-tight truncate">
             {viewMode === 'mesh' ? 'Full Agentic Mesh Visualization' : 'Scenario Creator Studio'}
           </h1>
           {viewMode === 'scenario' && (
-            <div className="flex items-center gap-2 text-xs text-bm-text-secondary font-medium mt-0.5">
-              <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full border border-green-200">Draft Mode</span>
-              {lastSaved && <span>Last saved {lastSaved}</span>}
+            <div className="flex items-center gap-1.5 text-[10px] lg:text-xs text-bm-text-secondary font-medium mt-0.5">
+              <span className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full border border-green-200 flex-shrink-0">Draft</span>
+              {lastSaved && <span className="truncate">Last saved {lastSaved}</span>}
             </div>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-2 lg:gap-4 flex-shrink-0">
         {viewMode === 'scenario' && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
-              className="p-2 text-bm-text-secondary hover:text-bm-maroon hover:bg-bm-light-grey rounded-full transition-colors relative"
+              className="p-1.5 text-bm-text-secondary hover:text-bm-maroon hover:bg-bm-light-grey rounded-full transition-colors relative flex-shrink-0"
               title="Version History"
             >
-              <span className="material-symbols-outlined">history</span>
+              <span className="material-symbols-outlined text-base lg:text-lg">history</span>
             </button>
             <button
-              className="p-2 text-bm-text-secondary hover:text-bm-maroon hover:bg-bm-light-grey rounded-full transition-colors relative"
+              className="p-1.5 text-bm-text-secondary hover:text-bm-maroon hover:bg-bm-light-grey rounded-full transition-colors relative flex-shrink-0"
               title="Collaborators"
             >
-              <span className="material-symbols-outlined">group_add</span>
+              <span className="material-symbols-outlined text-base lg:text-lg">group_add</span>
             </button>
           </div>
         )}
-        <div className="flex gap-3">
+        <div className="flex gap-1.5 lg:gap-2">
           {viewMode === 'mesh' && (
             <>
               <button
                 onClick={onCreateWorkflow}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg text-sm shadow-sm group"
+                className="flex items-center gap-1 px-2.5 lg:px-3 py-1.5 lg:py-2 bg-white border border-slate-200 text-slate-700 font-semibold rounded-md text-[11px] lg:text-xs shadow-sm group whitespace-nowrap"
               >
-                <span className="material-symbols-outlined text-xl text-slate-400 group-hover:text-bm-maroon transition-colors">
+                <span className="material-symbols-outlined text-base lg:text-lg text-slate-400 group-hover:text-bm-maroon transition-colors">
                   add_circle
                 </span>
-                Create Workflow
+                <span className="hidden sm:inline">Create Workflow</span>
+                <span className="sm:hidden">Create</span>
               </button>
               <button
                 onClick={onRunSimulation}
-                className="flex items-center gap-2 px-5 py-2.5 bg-bm-gold text-bm-maroon font-extrabold rounded-lg text-sm shadow-md"
+                className="flex items-center gap-1 px-2.5 lg:px-3 py-1.5 lg:py-2 bg-bm-gold text-bm-maroon font-bold rounded-md text-[11px] lg:text-xs shadow-md whitespace-nowrap"
               >
-                <span className="material-symbols-outlined text-xl">play_arrow</span>
-                Run Simulation
+                <span className="material-symbols-outlined text-base lg:text-lg">play_arrow</span>
+                <span className="hidden sm:inline">Run Simulation</span>
+                <span className="sm:hidden">Run</span>
               </button>
             </>
           )}
           <button
             onClick={() => onViewModeChange?.(viewMode === 'mesh' ? 'scenario' : 'mesh')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm ${
+            className={`flex items-center gap-1 px-2 lg:px-2.5 py-1.5 lg:py-2 rounded-md font-semibold text-[11px] lg:text-xs whitespace-nowrap ${
               viewMode === 'mesh'
                 ? 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                 : 'bg-bm-maroon text-white hover:bg-bm-maroon-dark'
             }`}
           >
-            <span className="material-symbols-outlined text-xl">
+            <span className="material-symbols-outlined text-base lg:text-lg">
               {viewMode === 'mesh' ? 'account_tree' : 'hub'}
             </span>
-            {viewMode === 'mesh' ? 'Scenario View' : 'Mesh View'}
+            <span className="hidden sm:inline">{viewMode === 'mesh' ? 'Scenario View' : 'Mesh View'}</span>
+            <span className="sm:hidden">{viewMode === 'mesh' ? 'Scenario' : 'Mesh'}</span>
           </button>
         </div>
-        <div className="h-8 w-px bg-bm-grey mx-2"></div>
-        <div className="flex items-center gap-4">
-          <button className="relative p-2 text-bm-text-secondary hover:text-bm-maroon hover:bg-bm-light-grey rounded-full transition-colors">
-            <span className="material-symbols-outlined">notifications</span>
-            <span className="absolute top-2 right-2 block h-2.5 w-2.5 rounded-full bg-bm-maroon border-2 border-bm-white"></span>
+        <div className="h-5 lg:h-6 w-px bg-bm-grey mx-1 hidden sm:block"></div>
+        <div className="flex items-center gap-2 lg:gap-3">
+          <button className="relative p-1.5 text-bm-text-secondary hover:text-bm-maroon hover:bg-bm-light-grey rounded-full transition-colors flex-shrink-0">
+            <span className="material-symbols-outlined text-base lg:text-lg">notifications</span>
+            <span className="absolute top-1.5 right-1.5 block h-1.5 w-1.5 rounded-full bg-bm-maroon border-2 border-bm-white"></span>
           </button>
-          <div className="flex items-center gap-3 pl-2 cursor-pointer hover:opacity-80 transition-opacity">
+          <div className="flex items-center gap-2 lg:gap-3 pl-2 cursor-pointer hover:opacity-80 transition-opacity">
             <div className="text-right hidden sm:block">
-              <p className="font-bold text-sm text-bm-text-primary leading-tight">{userName}</p>
-              <p className="text-xs text-bm-text-secondary">{userRole}</p>
+              <p className="font-bold text-xs lg:text-sm text-bm-text-primary leading-tight truncate max-w-[100px]">{userName}</p>
+              <p className="text-[10px] lg:text-xs text-bm-text-secondary truncate">{userRole}</p>
             </div>
             {userAvatar ? (
               <img
                 alt="User profile"
-                className="w-10 h-10 rounded-full object-cover border-2 border-bm-maroon shadow-sm"
+                className="w-7 h-7 lg:w-8 lg:h-8 rounded-full object-cover border-2 border-bm-maroon shadow-sm flex-shrink-0"
                 src={userAvatar}
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center border-2 border-bm-maroon shadow-sm">
-                <span className="material-symbols-outlined text-slate-500">person</span>
+              <div className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-slate-200 flex items-center justify-center border-2 border-bm-maroon shadow-sm flex-shrink-0">
+                <span className="material-symbols-outlined text-slate-500 text-xs lg:text-sm">person</span>
               </div>
             )}
           </div>
