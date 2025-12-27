@@ -34,13 +34,35 @@ export async function GET(
       return NextResponse.json({ error: 'Session not found' }, { status: 404 })
     }
 
-    // Get assessments directly for this scenario
-    const { data: assessments } = await supabase
+    // Get all assessments for this scenario
+    const { data: allAssessments, error: assessmentError } = await supabase
       .from('scenario_assessments')
       .select('*')
       .eq('scenario_id', session.scenario_id)
+      .order('order_index', { ascending: true })
       .order('created_at', { ascending: true })
-      .limit(5) // Get first 5 questions
+
+    if (assessmentError) {
+      console.error('Error fetching assessments:', assessmentError)
+    }
+
+    // Get already-answered assessments for this session
+    const { data: answeredAssessments } = await supabase
+      .from('session_assessments')
+      .select('assessment_id')
+      .eq('session_id', sessionId)
+
+    const answeredIds = new Set(
+      (answeredAssessments || []).map((a: any) => a.assessment_id).filter(Boolean)
+    )
+
+    // Filter out already-answered assessments and get the first unanswered one
+    const availableAssessments = (allAssessments || []).filter(
+      (assessment: any) => !answeredIds.has(assessment.id)
+    )
+
+    // Return first unanswered assessment (limit to 1 when AI explicitly requests)
+    const assessments = availableAssessments.slice(0, 1)
 
     return NextResponse.json({
       assessments: assessments || [],

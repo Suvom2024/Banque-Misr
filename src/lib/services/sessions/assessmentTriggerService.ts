@@ -38,13 +38,13 @@ export async function shouldTriggerAssessment(
       .eq('id', sessionId)
       .single()
 
-    if (session) {
+    if (session?.scenario_id) {
       const { data: assessment } = await supabase
         .from('scenario_assessments')
         .select('id')
         .eq('scenario_id', session.scenario_id)
         .limit(1)
-        .single()
+        .maybeSingle()
 
       return {
         shouldTrigger: true,
@@ -67,13 +67,13 @@ export async function shouldTriggerAssessment(
         .eq('id', sessionId)
         .single()
 
-      if (session) {
+      if (session?.scenario_id) {
         const { data: assessment } = await supabase
           .from('scenario_assessments')
           .select('id')
           .eq('scenario_id', session.scenario_id)
           .limit(1)
-          .single()
+          .maybeSingle()
 
         return {
           shouldTrigger: true,

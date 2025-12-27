@@ -77,7 +77,7 @@ export async function getUserOverallPerformance(
   // Calculate from sessions if no snapshot exists
   const { data: sessions } = await supabase
     .from('sessions')
-    .select('overall_score, started_at, completed_at')
+    .select('id, overall_score, started_at, completed_at')
     .eq('user_id', userId)
     .eq('status', 'completed')
     .gte('completed_at', periodStart.toISOString())
@@ -215,9 +215,9 @@ export async function getPerformanceTrend(
 
     const sessionCounts = new Map<string, number>()
     sessions?.forEach((s) => {
-        const date = new Date(s.completed_at).toISOString().split('T')[0]
-        sessionCounts.set(date, (sessionCounts.get(date) || 0) + 1)
-      })
+      const date = new Date(s.completed_at).toISOString().split('T')[0]
+      sessionCounts.set(date, (sessionCounts.get(date) || 0) + 1)
+    })
 
     return snapshots.map((snapshot) => ({
       date: snapshot.snapshot_date,

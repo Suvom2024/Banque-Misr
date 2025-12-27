@@ -152,9 +152,26 @@ export function LiveSessionClient({ userName, sessionId }: LiveSessionClientProp
   }, [])
 
   const handleAssessmentStateChange = useCallback((assessment: any | null) => {
-    setCurrentAssessment(assessment)
     console.log('[LiveSessionClient] 🟢 Assessment state changed:', assessment ? 'Active' : 'Cleared')
+    if (assessment) {
+      console.log('[LiveSessionClient] 📋 Assessment data received:', {
+        id: assessment.id,
+        question: assessment.question_text?.substring(0, 50) + '...',
+        optionsType: Array.isArray(assessment.options) ? 'array' : typeof assessment.options,
+        optionsCount: Array.isArray(assessment.options) ? assessment.options.length : 0,
+        questionType: assessment.question_type,
+        hasCorrectAnswer: !!assessment.correct_answer
+      })
+    }
+    setCurrentAssessment(assessment)
   }, [])
+  
+  // Debug effect to verify assessment state
+  useEffect(() => {
+    if (currentAssessment) {
+      console.log('[LiveSessionClient] ✅ currentAssessment state is set - panel should be visible')
+    }
+  }, [currentAssessment])
 
   const handleVoiceStateChange = useCallback((state: {
     isListening: boolean
@@ -332,6 +349,16 @@ export function LiveSessionClient({ userName, sessionId }: LiveSessionClientProp
                           // Transform options from database format to component format
                           const options = currentAssessment.options || []
                           const correctAnswer = currentAssessment.correct_answer
+                          
+                          // Log for debugging
+                          if (!Array.isArray(options) || options.length === 0) {
+                            console.warn('[LiveSessionClient] ⚠️ Invalid options format:', {
+                              optionsType: typeof options,
+                              isArray: Array.isArray(options),
+                              optionsValue: options,
+                              questionType: currentAssessment.question_type
+                            })
+                          }
                           
                           if (Array.isArray(options) && options.length > 0) {
                             return options.map((opt: any, idx: number) => {
