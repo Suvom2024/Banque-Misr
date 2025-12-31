@@ -39,15 +39,28 @@ export async function POST(
     // Get next turn number
     const turnNumber = await getNextTurnNumber(sessionId)
 
-    // Save turn
-    const turnId = await saveTurn({
-      sessionId,
-      turnNumber,
-      speaker: body.speaker,
-      message: body.message,
-      metrics: body.metrics,
-      audioChunkId: body.audioChunkId,
-    })
+    // Get recent conversation context for AI analysis (last 5 turns)
+    const { getSessionTurns } = await import('@/lib/services/sessions/turnService')
+    const recentTurns = await getSessionTurns(sessionId)
+    const conversationContext = recentTurns
+      .slice(-5)
+      .map((t) => ({ speaker: t.speaker, message: t.message }))
+
+    // Save turn with AI analysis trigger
+    const turnId = await saveTurn(
+      {
+        sessionId,
+        turnNumber,
+        speaker: body.speaker,
+        message: body.message,
+        metrics: body.metrics,
+        audioChunkId: body.audioChunkId,
+      },
+      {
+        triggerAIAnalysis: true, // Enable AI analysis for user turns
+        conversationContext,
+      }
+    )
 
     if (!turnId) {
       return NextResponse.json({ error: 'Failed to save turn' }, { status: 500 })
@@ -63,7 +76,7 @@ export async function POST(
       .eq('id', sessionId)
 
     // Check if assessment should be triggered (agentic logic)
-    const assessmentCheck = await shouldTriggerAssessment(sessionId)
+    const assessmentCheck = await shouldTriggerAssessment(sessionId, user.id)
 
     return NextResponse.json({
       turnId,

@@ -66,8 +66,8 @@ export async function getPerformanceSnapshot(
   const scenario = session.scenarios as { title: string } | null
   const overallScore = session.overall_score || 0
 
-  // Calculate grade
-  const grade = calculateGrade(overallScore)
+  // Calculate grade using dynamic thresholds
+  const grade = await calculateGrade(overallScore, userId)
 
   // Get competencies to find top strength
   const { data: competencies } = await supabase
@@ -104,7 +104,7 @@ export async function getPerformanceSnapshot(
       name: topCompetency.competency_name,
       description: topCompetency.feedback || `Mastered at ${new Date(session.completed_at || session.started_at).toLocaleTimeString()}. ${topCompetency.competency_name} score: ${topCompetency.score}%`,
       masteredAt: new Date(session.completed_at || session.started_at).toLocaleTimeString(),
-      peerRanking: calculatePeerRanking(topCompetency.score || 0),
+      peerRanking: await calculatePeerRanking(topCompetency.score || 0, userId),
     } : null,
     ahaMoment: generateAhaMoment(competencies || [], session.ai_summary),
     assessmentResults,
@@ -114,9 +114,26 @@ export async function getPerformanceSnapshot(
 }
 
 /**
- * Calculate grade from score
+ * Calculate grade from score using dynamic user thresholds
  */
-function calculateGrade(score: number): string {
+async function calculateGrade(score: number, userId?: string): Promise<string> {
+  // If userId provided, use dynamic thresholds
+  if (userId) {
+    try {
+      const { getUserThresholds } = await import('./dynamicThresholdService')
+      const thresholds = await getUserThresholds(userId)
+      
+      if (score >= thresholds.excellent) return 'A'
+      if (score >= thresholds.good) return 'B'
+      if (score >= thresholds.fair) return 'C'
+      if (score >= thresholds.needsImprovement) return 'D'
+      return 'F'
+    } catch (error) {
+      console.error('[PerformanceSnapshot] Error getting dynamic thresholds, using defaults:', error)
+    }
+  }
+
+  // Fallback to default thresholds
   if (score >= 90) return 'A'
   if (score >= 80) return 'B'
   if (score >= 70) return 'C'
@@ -249,10 +266,26 @@ function getSkillColor(skillName: string): string {
 }
 
 /**
- * Calculate peer ranking
+ * Calculate peer ranking using dynamic user thresholds
  */
-function calculatePeerRanking(score: number): string {
-  // Simplified calculation - in real app, would query actual peer data
+async function calculatePeerRanking(score: number, userId?: string): Promise<string> {
+  // If userId provided, use dynamic thresholds
+  if (userId) {
+    try {
+      const { getUserThresholds } = await import('./dynamicThresholdService')
+      const thresholds = await getUserThresholds(userId)
+      
+      if (score >= thresholds.peerTop1) return 'Top 1% of peers'
+      if (score >= thresholds.peerTop5) return 'Top 5% of peers'
+      if (score >= thresholds.peerTop10) return 'Top 10% of peers'
+      if (score >= thresholds.peerTop25) return 'Top 25% of peers'
+      return 'Above average'
+    } catch (error) {
+      console.error('[PerformanceSnapshot] Error getting dynamic thresholds, using defaults:', error)
+    }
+  }
+
+  // Fallback to default thresholds
   if (score >= 95) return 'Top 1% of peers'
   if (score >= 90) return 'Top 5% of peers'
   if (score >= 85) return 'Top 10% of peers'
@@ -296,8 +329,10 @@ async function generateGrowthPath(
   const supabase = await createClient()
   const path: PerformanceSnapshotData['growthPath'] = []
 
-  // Find weak competencies
-  const weakCompetencies = competencies.filter((c) => (c.score || 0) < 75).slice(0, 2)
+  // Find weak competencies using dynamic threshold
+  const { getUserThresholds } = await import('./dynamicThresholdService')
+  const thresholds = await getUserThresholds(userId)
+  const weakCompetencies = competencies.filter((c) => (c.score || 0) < thresholds.weakCompetency).slice(0, 2)
 
   for (const competency of weakCompetencies) {
     // Find related scenarios

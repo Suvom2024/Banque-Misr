@@ -34,15 +34,28 @@ export async function POST(
       return NextResponse.json({ error: 'Session not found' }, { status: 404 })
     }
 
-    // Get assessment question
-    const { data: assessment, error: assessmentError } = await supabase
-      .from('scenario_assessments')
-      .select('*')
-      .eq('id', assessmentId)
-      .single()
+    // Check if this is a dynamic assessment (ID starts with "dynamic-")
+    const isDynamicAssessment = assessmentId.startsWith('dynamic-')
+    let assessment: any = null
 
-    if (assessmentError || !assessment) {
-      return NextResponse.json({ error: 'Assessment not found' }, { status: 404 })
+    if (isDynamicAssessment) {
+      // For dynamic assessments, use the assessment data from request body
+      if (!body.assessment) {
+        return NextResponse.json({ error: 'Assessment data required for dynamic assessments' }, { status: 400 })
+      }
+      assessment = body.assessment
+    } else {
+      // Get assessment question from database
+      const { data: dbAssessment, error: assessmentError } = await supabase
+        .from('scenario_assessments')
+        .select('*')
+        .eq('id', assessmentId)
+        .single()
+
+      if (assessmentError || !dbAssessment) {
+        return NextResponse.json({ error: 'Assessment not found' }, { status: 404 })
+      }
+      assessment = dbAssessment
     }
 
     // Check if answer is correct
@@ -50,60 +63,82 @@ export async function POST(
     let score = 0
     let feedback = ''
 
-    if (assessment.question_type === 'multiple_choice') {
+    // Handle multiple-choice questions (both dynamic and pre-defined)
+    if (assessment.question_type === 'multiple-choice' || assessment.question_type === 'multiple_choice') {
       const options = assessment.options as any[]
-      const selectedOption = options.find((opt: any) => {
-        const optId = typeof opt === 'string' ? opt : opt.text || opt
-        return optId === body.answer || opt.is_correct
-      })
-      isCorrect = selectedOption?.is_correct || false
-      score = isCorrect ? 100 : 0
-      feedback = isCorrect
-        ? 'Correct! Well done.'
-        : `Incorrect. The correct answer was: ${options.find((opt: any) => opt.is_correct)?.text || 'N/A'}`
-    } else if (assessment.question_type === 'true_false') {
+      
+      // For dynamic assessments, options are simple strings
+      // For pre-defined assessments, options might be objects with is_correct flag
+      if (isDynamicAssessment) {
+        // Dynamic assessment: compare answer text directly
+        const selectedOptionText = options.find((opt: any, idx: number) => {
+          const optId = typeof opt === 'string' ? `opt-${idx}` : opt.id || `opt-${idx}`
+          return optId === body.answer
+        })
+        const selectedText = typeof selectedOptionText === 'string' 
+          ? selectedOptionText 
+          : selectedOptionText?.text || ''
+        
+        isCorrect = selectedText === assessment.correct_answer
+        score = isCorrect ? 100 : 0
+        feedback = isCorrect
+          ? assessment.explanation || 'Correct! Well done.'
+          : `Incorrect. The correct answer is: ${assessment.correct_answer}. ${assessment.explanation || ''}`
+      } else {
+        // Pre-defined assessment: check is_correct flag
+        const selectedOption = options.find((opt: any) => {
+          const optId = typeof opt === 'string' ? opt : opt.text || opt.id || opt
+          return optId === body.answer
+        })
+        isCorrect = selectedOption?.is_correct || false
+        score = isCorrect ? 100 : 0
+        feedback = isCorrect
+          ? 'Correct! Well done.'
+          : `Incorrect. The correct answer was: ${options.find((opt: any) => opt.is_correct)?.text || 'N/A'}`
+      }
+    } else if (assessment.question_type === 'true_false' || assessment.question_type === 'true-false') {
       isCorrect = body.answer === assessment.correct_answer
       score = isCorrect ? 100 : 0
       feedback = isCorrect
         ? 'Correct!'
         : `Incorrect. The correct answer was: ${assessment.correct_answer}`
-    } else if (assessment.question_type === 'short_answer') {
+    } else if (assessment.question_type === 'short_answer' || assessment.question_type === 'open-ended') {
       // For short answer, we'll do a simple comparison (can be enhanced with LLM)
       isCorrect = body.answer.toLowerCase().trim() === assessment.correct_answer?.toLowerCase().trim()
       score = isCorrect ? 100 : 50 // Partial credit for short answers
       feedback = isCorrect ? 'Correct!' : 'Your answer is close, but not quite right.'
     }
 
-    // Save assessment answer
-    const { data: existingAnswer } = await supabase
-      .from('session_assessments')
-      .select('id')
-      .eq('session_id', sessionId)
-      .eq('scenario_assessment_id', assessmentId)
-      .single()
-
-    if (existingAnswer) {
-      // Update existing answer
-      await supabase
+    // Save assessment answer (only for pre-defined assessments)
+    if (!isDynamicAssessment) {
+      const { data: existingAnswer } = await supabase
         .from('session_assessments')
-        .update({
+        .select('id')
+        .eq('session_id', sessionId)
+        .eq('assessment_id', assessmentId)
+        .single()
+
+      if (existingAnswer) {
+        // Update existing answer
+        await supabase
+          .from('session_assessments')
+          .update({
+            user_answer: body.answer,
+            is_correct: isCorrect,
+            points_earned: score,
+            answered_at: new Date().toISOString(),
+          })
+          .eq('id', existingAnswer.id)
+      } else {
+        // Create new answer
+        await supabase.from('session_assessments').insert({
+          session_id: sessionId,
+          assessment_id: assessmentId,
           user_answer: body.answer,
           is_correct: isCorrect,
-          score,
-          feedback,
-          answered_at: new Date().toISOString(),
+          points_earned: score,
         })
-        .eq('id', existingAnswer.id)
-    } else {
-      // Create new answer
-      await supabase.from('session_assessments').insert({
-        session_id: sessionId,
-        scenario_assessment_id: assessmentId,
-        user_answer: body.answer,
-        is_correct: isCorrect,
-        score,
-        feedback,
-      })
+      }
     }
 
     return NextResponse.json({

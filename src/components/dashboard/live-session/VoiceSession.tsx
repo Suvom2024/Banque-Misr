@@ -12,6 +12,7 @@ interface VoiceSessionProps {
   sessionId: string
   scenarioTitle: string
   onTurnComplete?: (turn: { speaker: string; message: string; metrics?: any }) => void
+  onMessageStream?: (turn: { speaker: string; message: string; isComplete: boolean }) => void // New: for streaming updates
   onAssessmentTrigger?: (assessment: any) => void
   onSessionEnd?: () => void
   onEndSessionRef?: (endFn: () => Promise<void>) => void
@@ -19,12 +20,14 @@ interface VoiceSessionProps {
   onAssessmentStateChange?: (assessment: any | null) => void
   onAssessmentSubmitRef?: (submitFn: (selectedOptionId: string) => Promise<void>) => void
   onMicToggleRef?: (toggleFn: () => void) => void
+  hasExistingTurns?: boolean // New: to prevent greeting if session has turns
 }
 
 export function VoiceSession({
   sessionId,
   scenarioTitle,
   onTurnComplete,
+  onMessageStream,
   onAssessmentTrigger,
   onSessionEnd,
   onEndSessionRef,
@@ -32,6 +35,7 @@ export function VoiceSession({
   onAssessmentStateChange,
   onAssessmentSubmitRef,
   onMicToggleRef,
+  hasExistingTurns = false,
 }: VoiceSessionProps) {
   const [isConnected, setIsConnected] = useState(false)
   const [isListening, setIsListening] = useState(false)
@@ -61,6 +65,19 @@ export function VoiceSession({
   const schedulerActiveRef = useRef(false)
   const nextStartTimeRef = useRef<number | null>(null)
   const scheduledSourcesRef = useRef<AudioBufferSourceNode[]>([])
+  
+  // Interruption detection refs - DISABLED FOR NOW
+  // Client-side interruption detection is causing false positives and breaking conversation flow
+  // Let the API's built-in VAD handle interruptions instead
+  const userSpeechDetectedRef = useRef(false)
+  const audioLevelThreshold = 0.03 // Increased threshold to reduce false positives (was 0.01)
+  const consecutiveSpeechFramesRef = useRef(0)
+  const INTERRUPTION_FRAMES_THRESHOLD = 8 // Increased from 3 to 8 - need more consecutive frames to confirm interruption
+  const lastInterruptionTimeRef = useRef<number>(0)
+  const INTERRUPTION_COOLDOWN_MS = 1500 // Increased cooldown to prevent false triggers (was 500)
+  const aiStartedSpeakingTimeRef = useRef<number>(0) // Track when AI started speaking
+  const MIN_AI_SPEAKING_TIME_MS = 500 // Minimum time AI must be speaking before interruption is valid
+  const CLIENT_SIDE_INTERRUPTION_ENABLED = false // DISABLED - causing false positives
 
   // Transcription accumulation refs
   const transcriptionBufferRef = useRef<string>('')
@@ -76,6 +93,7 @@ export function VoiceSession({
   const lastAssessmentTriggerRef = useRef<number>(0) // Track last trigger time to prevent spam
   const currentAssessmentRef = useRef<any>(null) // Track assessment state via ref
   const ASSESSMENT_TRIGGER_COOLDOWN = 10000 // 10 seconds cooldown between triggers
+  const assessmentSubmissionTimeRef = useRef<number>(0) // Track when assessment was submitted to ignore spurious interruptions
 
   // ============================================================================
   // AUDIO PLAYBACK SYSTEM - Based on official docs example
@@ -142,8 +160,13 @@ export function VoiceSession({
           const scheduledStart: number = nextStartTime
           const scheduledEnd: number = scheduledStart + audioBuffer.duration
 
-          isPlayingRef.current = true
-          setIsSpeaking(true)
+            isPlayingRef.current = true
+            // Reset interruption detection when starting new playback
+            consecutiveSpeechFramesRef.current = 0
+            userSpeechDetectedRef.current = false
+            setIsSpeaking(true)
+            // Don't auto-mute mic - let API handle echo cancellation so we can detect interruptions
+            // The API's echo cancellation will prevent AI speech from being transcribed
           // Auto-mute mic when AI starts speaking to prevent noise transcription
           setIsMicMuted(true)
           isMicMutedRef.current = true
@@ -177,24 +200,53 @@ export function VoiceSession({
                 currentAssessmentRef.current = null
               }
 
-              if (!currentAssessmentRef.current) {
-                setIsMicMuted(false)
-                isMicMutedRef.current = false
-                onVoiceStateChange?.({
-                  isListening: true,
-                  isSpeaking: false,
-                  isConnected: true,
-                  isMicMuted: false,
-                })
-              } else {
-                // Keep mic muted if assessment is still active
-                onVoiceStateChange?.({
-                  isListening: false,
-                  isSpeaking: false,
-                  isConnected: true,
-                  isMicMuted: true,
-                })
-              }
+              // CRITICAL: Clear any interruption state when AI finishes speaking
+              // This prevents the API from being stuck in an interrupted state
+              // Add a small delay before unmuting to ensure clean state transition
+              setTimeout(() => {
+                if (!currentAssessmentRef.current) {
+                  // Send a "clear" signal to reset API state after interruption
+                  // This ensures the API is ready for the next user input
+                  try {
+                    if (sessionRef.current && isSessionOpenRef.current) {
+                      // Send an empty realtime input to clear any pending interruption state
+                      const sampleRate = 16000
+                      const silenceDuration = 0.1 // 100ms of silence
+                      const samplesCount = Math.floor(silenceDuration * sampleRate)
+                      const silenceBuffer = new Int16Array(samplesCount).fill(0)
+                      const uint8Array = new Uint8Array(silenceBuffer.buffer)
+                      const base64Silence = btoa(String.fromCharCode.apply(null, Array.from(uint8Array)))
+                      
+                      sessionRef.current.sendRealtimeInput({
+                        audio: {
+                          data: base64Silence,
+                          mimeType: "audio/pcm;rate=16000"
+                        }
+                      })
+                      console.log('[VoiceSession] 🔧 Sent state-clearing audio after AI finished speaking')
+                    }
+                  } catch (error) {
+                    console.error('[VoiceSession] Error sending state-clearing audio:', error)
+                  }
+                  
+                  setIsMicMuted(false)
+                  isMicMutedRef.current = false
+                  onVoiceStateChange?.({
+                    isListening: true,
+                    isSpeaking: false,
+                    isConnected: true,
+                    isMicMuted: false,
+                  })
+                } else {
+                  // Keep mic muted if assessment is still active
+                  onVoiceStateChange?.({
+                    isListening: false,
+                    isSpeaking: false,
+                    isConnected: true,
+                    isMicMuted: true,
+                  })
+                }
+              }, 300) // 300ms delay to ensure clean state transition
             }
           }
 
@@ -216,6 +268,7 @@ export function VoiceSession({
           setIsSpeaking(false)
           nextStartTimeRef.current = null
           schedulerActiveRef.current = false
+          aiStartedSpeakingTimeRef.current = 0 // Reset when AI finishes speaking
 
           // Auto-unmute mic when AI finishes speaking (unless assessment is active)
           // Clear assessment ref when AI finishes speaking after assessment submission
@@ -239,8 +292,12 @@ export function VoiceSession({
     }
   }, [isMicMuted, onVoiceStateChange])
 
-  const stopAllAudio = useCallback(() => {
-    console.log('[VoiceSession] Stopping all audio')
+  const stopAllAudio = useCallback((isInterruption = false) => {
+    if (isInterruption) {
+      console.log('[VoiceSession] 🛑 Stopping audio due to user interruption')
+    } else {
+      console.log('[VoiceSession] Stopping all audio')
+    }
 
     // Abort any in-flight playback loop and stop audio smoothly (avoid overlap/races)
     playbackTokenRef.current += 1
@@ -249,6 +306,10 @@ export function VoiceSession({
 
     // Clear queued audio immediately
     audioQueueRef.current = []
+
+    // For interruptions, stop more aggressively (faster fade)
+    const fadeDuration = isInterruption ? 0.01 : 0.02
+    const stopDelay = isInterruption ? 0.015 : 0.03
 
     // Gracefully fade and stop the current chunk (no harsh cut, no overlap)
     const ctx = outputAudioContextRef.current
@@ -262,8 +323,8 @@ export function VoiceSession({
           const t = ctx.currentTime
           gain.gain.cancelScheduledValues(t)
           gain.gain.setValueAtTime(gain.gain.value, t)
-          gain.gain.linearRampToValueAtTime(0, t + 0.02)
-          src.stop(t + 0.03)
+          gain.gain.linearRampToValueAtTime(0, t + fadeDuration)
+          src.stop(t + stopDelay)
         } else {
           // Fallback: stop immediately if no gain node
           src.stop()
@@ -289,16 +350,121 @@ export function VoiceSession({
     currentGainRef.current = null
     isPlayingRef.current = false
     setIsSpeaking(false)
+    
+    // Update voice state to reflect interruption
+    if (isInterruption) {
+      onVoiceStateChange?.({
+        isListening: true,
+        isSpeaking: false,
+        isConnected: isSessionOpenRef.current,
+        isMicMuted: isMicMutedRef.current,
+      })
+    }
   }, [])
 
   // ============================================================================
   // SESSION INITIALIZATION
   // ============================================================================
 
+  // Track previous sessionId to detect changes
+  const previousSessionIdRef = useRef<string | null>(null)
+
   useEffect(() => {
-    // Prevent duplicate initialization with a more robust check
-    if (hasInitializedRef.current || globalSessionLock) {
-      console.log('[VoiceSession] Already initialized, skipping')
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:305',message:'VoiceSession useEffect triggered',data:{sessionId,previousSessionId:previousSessionIdRef.current,hasInitialized:hasInitializedRef.current,globalSessionLock,hasGlobalInstance:!!globalSessionInstance,hasSessionRef:!!sessionRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,D'})}).catch(()=>{});
+    // #endregion
+    
+    // If sessionId changed OR if we have a global instance but sessionRef is null (remount scenario), reset
+    const sessionIdChanged = previousSessionIdRef.current !== null && previousSessionIdRef.current !== sessionId
+    const isRemountWithNewSession = previousSessionIdRef.current === null && (globalSessionInstance || globalSessionLock)
+    // Also check if sessionId is different from what we initialized (component reused, not remounted)
+    const isReusedComponentWithNewSession = previousSessionIdRef.current !== null && 
+                                            previousSessionIdRef.current !== sessionId && 
+                                            hasInitializedRef.current
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:312',message:'Checking session change conditions',data:{sessionId,previousSessionId:previousSessionIdRef.current,sessionIdChanged,isRemountWithNewSession,isReusedComponentWithNewSession,hasInitialized:hasInitializedRef.current,globalSessionLock,hasGlobalInstance:!!globalSessionInstance},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B'})}).catch(()=>{});
+    // #endregion
+    
+    if (sessionIdChanged || isRemountWithNewSession || isReusedComponentWithNewSession) {
+      console.log('[VoiceSession] Session ID changed or remount/reuse detected:', { 
+        previousSessionId: previousSessionIdRef.current, 
+        newSessionId: sessionId,
+        isRemount: isRemountWithNewSession,
+        isReuse: isReusedComponentWithNewSession,
+        hasGlobalInstance: !!globalSessionInstance
+      })
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:320',message:'Resetting for new session',data:{sessionId,previousSessionId:previousSessionIdRef.current,reason:sessionIdChanged?'sessionIdChanged':isRemountWithNewSession?'remount':'reuse'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B'})}).catch(()=>{});
+      // #endregion
+      
+      // Close old session if it exists
+      if (sessionRef.current) {
+        try {
+          sessionRef.current.close()
+        } catch (error) {
+          console.error('[VoiceSession] Error closing old session:', error)
+        }
+        sessionRef.current = null
+      }
+      
+      // Reset initialization state for new session
+      hasInitializedRef.current = false
+      
+      // Always reset global state when starting a new session
+      // This ensures clean state even if old component cleanup hasn't finished
+      globalSessionLock = false
+      globalSessionInstance = null
+      console.log('[VoiceSession] Reset global session state for new session')
+      
+      // Clean up audio resources
+      stopAllAudio()
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(track => track.stop())
+        mediaStreamRef.current = null
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(console.error)
+        audioContextRef.current = null
+      }
+      if (outputAudioContextRef.current) {
+        outputAudioContextRef.current.close().catch(console.error)
+        outputAudioContextRef.current = null
+      }
+      
+      // Reset state
+      setIsConnected(false)
+      setIsListening(false)
+      setIsSpeaking(false)
+      setIsMicMuted(false)
+    }
+    
+    // Update previous sessionId
+    previousSessionIdRef.current = sessionId
+    
+    // Prevent duplicate initialization - but allow if sessionId changed or remount/reuse detected (we just reset above)
+    const shouldSkipInit = hasInitializedRef.current && !sessionIdChanged && !isRemountWithNewSession && !isReusedComponentWithNewSession
+    if (shouldSkipInit) {
+      console.log('[VoiceSession] Already initialized for this session, skipping')
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:375',message:'VoiceSession initialization skipped - already initialized',data:{sessionId,hasInitialized:hasInitializedRef.current,sessionIdChanged,isRemountWithNewSession,isReusedComponentWithNewSession},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+      return
+    }
+    
+    // Check global lock - but allow if we're initializing a new session (lock was reset above)
+    // Also reset lock if we don't have a sessionRef (starting fresh) but lock is set
+    if (globalSessionLock && !sessionRef.current && !sessionIdChanged && !isRemountWithNewSession && !isReusedComponentWithNewSession) {
+      console.log('[VoiceSession] Global lock exists but no session ref - resetting lock for new session')
+      globalSessionLock = false
+      globalSessionInstance = null
+    }
+    
+    if (globalSessionLock && globalSessionInstance && globalSessionInstance !== sessionRef.current && !sessionIdChanged && !isRemountWithNewSession && !isReusedComponentWithNewSession) {
+      console.log('[VoiceSession] Global session lock active, skipping')
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:385',message:'VoiceSession initialization skipped - global lock',data:{sessionId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       return
     }
 
@@ -318,6 +484,9 @@ export function VoiceSession({
       // If there's already a global session, reuse it
       if (globalSessionInstance) {
         console.log('[VoiceSession] Reusing existing global session')
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:319',message:'Reusing global session instance',data:{sessionId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
         sessionRef.current = globalSessionInstance
         setIsConnected(true)
         setIsListening(true)
@@ -484,6 +653,10 @@ GENERAL RULES:
         // Process Live API messages
         const processMessage = async (message: any) => {
           try {
+            // #region agent log
+            fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:653',message:'processMessage called - message received',data:{sessionId,hasServerContent:!!message.serverContent,hasSetupComplete:!!message.setupComplete,hasModelTurn:!!message.serverContent?.modelTurn,hasOutputTranscription:!!message.serverContent?.outputTranscription},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
+
             // Log message structure for debugging (especially function calls)
             if (message.serverContent?.modelTurn?.parts) {
               const hasFunctionCall = message.serverContent.modelTurn.parts.some((p: any) => p.functionCall)
@@ -501,20 +674,120 @@ GENERAL RULES:
             // Handle serverContent
             if (message.serverContent) {
               const content = message.serverContent
+              
+              // #region agent log
+              fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:670',message:'Processing serverContent',data:{sessionId,hasInterrupted:!!content.interrupted,hasOutputTranscription:!!content.outputTranscription,hasModelTurn:!!content.modelTurn,hasAudio:!!content.modelTurn?.parts?.some((p:any)=>p.inlineData)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+              // #endregion
 
-              // Handle interruption
+              // Handle interruption from server
+              // IMPORTANT: Do NOT blindly return here. In practice, the server can send `interrupted: true`
+              // alongside other useful payload (e.g., transcription/audio). If we return, we can drop the
+              // model response (notably after assessment submission), forcing the user to speak again.
               if (content.interrupted) {
-                console.log('[VoiceSession] Interrupted, gracefully stopping audio')
-                stopAllAudio()
-                return
+                console.log('[VoiceSession] 🛑 Server detected interruption', {
+                  isPlayingAudio: isPlayingRef.current,
+                  hasAITranscription: aiTranscriptionBufferRef.current.length > 0,
+                  isMicMuted: isMicMutedRef.current
+                })
+                // #region agent log
+                fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:642',message:'Server interruption received',data:{sessionId,isPlayingAudio:isPlayingRef.current,hasAIBuffer:aiTranscriptionBufferRef.current.length,isMicMuted:isMicMutedRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+                // #endregion
+                
+                // Only stop audio if we're actually playing something
+                // (This is a "real" interruption we need to honor.)
+                if (isPlayingRef.current) {
+                  console.log('[VoiceSession] 🛑 Stopping audio due to valid interruption')
+                  stopAllAudio(true) // Pass true to indicate this is an interruption
+                  
+                  // Clear AI transcription buffer since it was interrupted
+                  if (aiTranscriptionTimeoutRef.current) {
+                    clearTimeout(aiTranscriptionTimeoutRef.current)
+                    aiTranscriptionTimeoutRef.current = null
+                  }
+                  // Mark interrupted message as complete
+                  if (aiTranscriptionBufferRef.current) {
+                    onMessageStream?.({
+                      speaker: 'ai-coach',
+                      message: aiTranscriptionBufferRef.current,
+                      isComplete: true,
+                    })
+                    aiTranscriptionBufferRef.current = ''
+                  }
+                  // For a real interruption, we can stop processing this message early.
+                  return
+                } else {
+                  // Check if this is right after assessment submission - ignore spurious interruptions during this time
+                  const timeSinceAssessment = Date.now() - assessmentSubmissionTimeRef.current
+                  // Give the model plenty of time to respond after an assessment submit.
+                  // During this window we should NOT send any "state clearing" audio, because it can
+                  // derail the model response and recreate the "needs user to speak first" behavior.
+                  const ASSESSMENT_RESPONSE_COOLDOWN = 15000 // 15 seconds after assessment submission
+                  
+                  if (timeSinceAssessment < ASSESSMENT_RESPONSE_COOLDOWN) {
+                    // Ignore spurious interruptions right after assessment submission
+                    // The API is processing the assessment and will respond naturally
+                    console.log('[VoiceSession] ⚠️ Ignoring spurious interruption - within assessment response cooldown', {
+                      timeSinceAssessment,
+                      remaining: ASSESSMENT_RESPONSE_COOLDOWN - timeSinceAssessment
+                    })
+                    // #region agent log
+                    fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:712',message:'Ignoring spurious interruption - assessment cooldown',data:{sessionId,timeSinceAssessment,remaining:ASSESSMENT_RESPONSE_COOLDOWN-timeSinceAssessment},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'Q'})}).catch(()=>{});
+                    // #endregion
+                    // IMPORTANT: Don't return. Continue processing other serverContent fields in this message.
+                  }
+                  
+                  // CRITICAL: Spurious interruption detected - must actively clear API's interrupted state
+                  // If we just ignore it, the API remains in corrupted state and won't respond
+                  console.log('[VoiceSession] ⚠️ Spurious interruption detected - sending clear signal to API')
+                  // #region agent log
+                  fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:660',message:'Spurious interruption - clearing API state',data:{sessionId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'Q'})}).catch(()=>{});
+                  // #endregion
+                  
+                  // Send a brief silence chunk to reset the API's interrupted state
+                  // This tells the API "false alarm, continue normally"
+                  try {
+                    if (sessionRef.current && isSessionOpenRef.current) {
+                      const sampleRate = 16000
+                      const silenceDuration = 0.5 // 500ms
+                      const samplesCount = Math.floor(silenceDuration * sampleRate)
+                      const silenceBuffer = new Int16Array(samplesCount).fill(0)
+                      const uint8Array = new Uint8Array(silenceBuffer.buffer)
+                      const base64Silence = btoa(String.fromCharCode.apply(null, Array.from(uint8Array)))
+                      
+                      sessionRef.current.sendRealtimeInput({
+                        audio: {
+                          data: base64Silence,
+                          mimeType: "audio/pcm;rate=16000"
+                        }
+                      })
+                      console.log('[VoiceSession] ✅ Sent state-clearing signal after spurious interruption')
+                    }
+                  } catch (error) {
+                    console.error('[VoiceSession] Error clearing spurious interruption:', error)
+                  }
+                }
               }
 
               // Handle output transcription (AI speech to text)
               if (content.outputTranscription?.text) {
                 const fragment = content.outputTranscription.text
+                
+                // #region agent log
+                fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:739',message:'AI transcription fragment received',data:{sessionId,fragment:fragment.substring(0,50),bufferLength:aiTranscriptionBufferRef.current.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
+                
+                // Log fragment for debugging
+                console.log('[VoiceSession] 📝 AI transcription fragment:', fragment.substring(0, 50))
 
                 // Accumulate AI transcription fragments
                 aiTranscriptionBufferRef.current += fragment
+                
+                // Stream partial message immediately for real-time display
+                onMessageStream?.({
+                  speaker: 'ai-coach',
+                  message: aiTranscriptionBufferRef.current,
+                  isComplete: false,
+                })
 
                 // Clear any existing timeout
                 if (aiTranscriptionTimeoutRef.current) {
@@ -527,6 +800,16 @@ GENERAL RULES:
 
                   if (completeMessage.length > 0) {
                     console.log('[VoiceSession] AI said (complete):', completeMessage)
+                    // #region agent log
+                    fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:688',message:'AI message complete',data:{sessionId,message:completeMessage.substring(0,50),isSpeaking:isPlayingRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'P'})}).catch(()=>{});
+                    // #endregion
+
+                    // Stream final complete message
+                    onMessageStream?.({
+                      speaker: 'ai-coach',
+                      message: completeMessage,
+                      isComplete: true,
+                    })
 
                     // Check if AI mentions testing/assessment and trigger if needed
                     await triggerAssessmentByKeywords(completeMessage, 'ai')
@@ -545,10 +828,33 @@ GENERAL RULES:
 
               // Handle model turn (AI response)
               if (content.modelTurn?.parts) {
+                // #region agent log
+                fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:793',message:'Model turn received - processing parts',data:{sessionId,partsCount:content.modelTurn.parts.length,hasAudio:content.modelTurn.parts.some((p:any)=>p.inlineData),hasText:content.modelTurn.parts.some((p:any)=>p.text)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
+                
                 for (const part of content.modelTurn.parts) {
 
                   // Handle audio data
                   if (part.inlineData?.data) {
+                    // #region agent log
+                    fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:838',message:'Audio data received in model turn - AI starting to speak',data:{sessionId,audioDataLength:part.inlineData.data.length,isPlaying:isPlayingRef.current,isMicMuted:isMicMutedRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                    // #endregion
+                    
+                    // Mute mic when AI starts speaking (especially important after assessment submission)
+                    if (!isMicMutedRef.current) {
+                      console.log('[VoiceSession] 🔇 Muting mic - AI is starting to speak')
+                      setIsMicMuted(true)
+                      isMicMutedRef.current = true
+                      setIsListening(false)
+                      setIsSpeaking(true)
+                      onVoiceStateChange?.({
+                        isListening: false,
+                        isSpeaking: true,
+                        isConnected: isSessionOpenRef.current,
+                        isMicMuted: true,
+                      })
+                    }
+                    
                     const audioBase64 = part.inlineData.data
 
                     // Decode base64 to ArrayBuffer
@@ -563,14 +869,20 @@ GENERAL RULES:
                     audioQueueRef.current.push(buffer)
 
                     setIsSpeaking(true)
-                    // Auto-mute mic when AI starts speaking to prevent noise transcription
-                    setIsMicMuted(true)
-                    isMicMutedRef.current = true
+                    // Reset interruption detection when AI starts speaking
+                    consecutiveSpeechFramesRef.current = 0
+                    userSpeechDetectedRef.current = false
+                    // Track when AI started speaking for interruption detection
+                    if (!isPlayingRef.current) {
+                      aiStartedSpeakingTimeRef.current = Date.now()
+                    }
+                    // Don't auto-mute mic - let API handle echo cancellation so we can detect interruptions
+                    // The API's echo cancellation will prevent AI speech from being transcribed
                     onVoiceStateChange?.({
-                      isListening: false,
+                      isListening: true, // Keep listening to detect interruptions
                       isSpeaking: true,
                       isConnected: true,
-                      isMicMuted: true,
+                      isMicMuted: isMicMutedRef.current, // Keep current mic state
                     })
 
                     // Start playback if not already playing
@@ -635,9 +947,19 @@ GENERAL RULES:
               // Handle input transcription (user speech to text)
               if (content.inputTranscription?.text) {
                 const fragment = content.inputTranscription.text
+                
+                // Log fragment for debugging
+                console.log('[VoiceSession] 🎤 User transcription fragment:', fragment.substring(0, 50))
 
                 // Accumulate transcription fragments
                 transcriptionBufferRef.current += fragment
+                
+                // Stream partial message immediately for real-time display
+                onMessageStream?.({
+                  speaker: 'user',
+                  message: transcriptionBufferRef.current,
+                  isComplete: false,
+                })
 
                 // Clear any existing timeout
                 if (transcriptionTimeoutRef.current) {
@@ -650,6 +972,16 @@ GENERAL RULES:
 
                   if (completeMessage.length > 0) {
                     console.log('[VoiceSession] User said (complete):', completeMessage)
+                    // #region agent log
+                    fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:831',message:'User message complete - waiting for AI response',data:{sessionId,message:completeMessage.substring(0,50),isMicMuted:isMicMutedRef.current,isSessionOpen:isSessionOpenRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
+                    // #endregion
+                    
+                    // Stream final complete message
+                    onMessageStream?.({
+                      speaker: 'user',
+                      message: completeMessage,
+                      isComplete: true,
+                    })
 
                     // Check if user requests assessment and trigger if needed
                     await triggerAssessmentByKeywords(completeMessage, 'user')
@@ -681,27 +1013,65 @@ GENERAL RULES:
           callbacks: {
             onopen: async () => {
               console.log('[VoiceSession] Connected to Gemini Live API')
+              // #region agent log
+              fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:861',message:'VoiceSession onopen callback',data:{sessionId,hasExistingTurns},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+              // #endregion
               setIsConnected(true)
               isSessionOpenRef.current = true
 
-              // Send initial greeting to trigger AI to speak first
-              // Wait a brief moment to ensure session is fully ready
-              setTimeout(() => {
-                if (sessionRef.current && isSessionOpenRef.current) {
-                  console.log('[VoiceSession] 🎤 Sending initial greeting prompt to trigger AI response')
-                  try {
-                    sessionRef.current.sendClientContent({
-                      turns: [{
-                        role: 'user',
-                        parts: [{ text: 'Please greet me and introduce yourself as my AI training coach. Let\'s begin the training session.' }]
-                      }]
-                    })
-                    console.log('[VoiceSession] ✅ Initial greeting prompt sent - AI should respond now')
-                  } catch (error) {
-                    console.error('[VoiceSession] ❌ Error sending initial greeting:', error)
+              // NOTE: Conversation history restoration is disabled due to API limitations
+              // Google Live API rejects conversation history, causing connection to close
+              // The UI will show previous messages, but AI will start fresh
+              // This ensures the session always works and voice is always detected
+              if (hasExistingTurns) {
+                console.log('[VoiceSession] ℹ️ Session has existing turns - conversation history visible in UI but AI starts fresh')
+                // #region agent log
+                fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:870',message:'Skipping conversation history restoration',data:{sessionId,reason:'API limitations - ensures session works'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'J'})}).catch(()=>{});
+                // #endregion
+              }
+
+              // Only send initial greeting if session has no existing turns (new session)
+              if (!hasExistingTurns) {
+                // #region agent log
+                fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:803',message:'Sending welcome message - hasExistingTurns is false',data:{sessionId,hasExistingTurns},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+                // #endregion
+                // Send initial greeting to trigger AI to speak first
+                // Wait a brief moment to ensure session is fully ready
+                setTimeout(() => {
+                  if (sessionRef.current && isSessionOpenRef.current) {
+                    console.log('[VoiceSession] 🎤 Sending initial greeting prompt to trigger AI response')
+                    // #region agent log
+                    fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:808',message:'About to sendClientContent for welcome',data:{sessionId,hasSessionRef:!!sessionRef.current,isSessionOpen:isSessionOpenRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+                    // #endregion
+                    try {
+                      sessionRef.current.sendClientContent({
+                        turns: [{
+                          role: 'user',
+                          parts: [{ text: 'Please greet me and introduce yourself as my AI training coach. Let\'s begin the training session.' }]
+                        }]
+                      })
+                      console.log('[VoiceSession] ✅ Initial greeting prompt sent - AI should respond now')
+                      // #region agent log
+                      fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:816',message:'Welcome message sendClientContent completed',data:{sessionId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+                      // #endregion
+                    } catch (error) {
+                      console.error('[VoiceSession] ❌ Error sending initial greeting:', error)
+                      // #region agent log
+                      fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:819',message:'Error sending welcome message',data:{sessionId,error:String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+                      // #endregion
+                    }
+                  } else {
+                    // #region agent log
+                    fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:822',message:'Cannot send welcome - session not ready',data:{sessionId,hasSessionRef:!!sessionRef.current,isSessionOpen:isSessionOpenRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+                    // #endregion
                   }
-                }
-              }, 500) // Small delay to ensure session is fully ready
+                }, 500) // Small delay to ensure session is fully ready
+              } else {
+                console.log('[VoiceSession] ⏭️ Skipping initial greeting - session has existing turns')
+                // #region agent log
+                fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:825',message:'Skipping welcome - hasExistingTurns is true',data:{sessionId,hasExistingTurns},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+                // #endregion
+              }
             },
             onmessage: async (message: any) => {
               responseQueue.push(message)
@@ -714,13 +1084,30 @@ GENERAL RULES:
               })
             },
             onclose: (event: any) => {
-              console.log('[VoiceSession] Connection closed:', event?.reason || 'Unknown')
+              const reason = event?.reason || 'Unknown'
+              console.log('[VoiceSession] Connection closed:', reason)
+              // #region agent log
+              fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:1014',message:'Connection closed',data:{sessionId,reason,hasSessionRef:!!sessionRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+              // #endregion
+              
               setIsConnected(false)
               isSessionOpenRef.current = false
+              setIsListening(false)
+              setIsSpeaking(false)
 
               if (processorRef.current) {
                 processorRef.current.disconnect()
                 processorRef.current = null
+              }
+              
+              // If connection closed due to invalid argument, log it
+              // Note: History restoration is already disabled, so this shouldn't happen
+              // But if it does, we'll just log it - the session will work without history
+              if (reason.includes('invalid argument') || reason.includes('Invalid')) {
+                console.error('[VoiceSession] ❌ Connection closed due to invalid argument')
+                // #region agent log
+                fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:1030',message:'Connection closed - invalid argument error',data:{sessionId,reason},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'J'})}).catch(()=>{});
+                // #endregion
               }
             },
           },
@@ -738,8 +1125,9 @@ GENERAL RULES:
             realtimeInputConfig: {
               automaticActivityDetection: {
                 disabled: false,
-                // Lower thresholds for better detection
-                silenceDurationMs: 800, // Wait 800ms of silence before considering speech ended
+                // Increased silence duration to ensure reliable end-of-turn detection
+                // This prevents the AI from not responding when user finishes speaking
+                silenceDurationMs: 1500, // Wait 1.5s of silence before considering speech ended (increased from 800ms)
                 prefixPaddingMs: 100, // Include 100ms before speech starts
               }
             }
@@ -755,9 +1143,11 @@ GENERAL RULES:
 
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
+            // Aggressive echo cancellation to prevent feedback loop that causes false interruptions
+            echoCancellation: { ideal: true },
+            noiseSuppression: { ideal: true },
+            autoGainControl: { ideal: false }, // Disable AGC - can cause issues with VAD
+            sampleRate: 16000,
           }
         })
 
@@ -781,6 +1171,102 @@ GENERAL RULES:
           }
 
           const inputBuffer = event.inputBuffer.getChannelData(0)
+          
+          // Detect user speech for interruption handling
+          let maxAmplitude = 0
+          for (let i = 0; i < inputBuffer.length; i++) {
+            const amplitude = Math.abs(inputBuffer[i])
+            if (amplitude > maxAmplitude) {
+              maxAmplitude = amplitude
+            }
+          }
+          
+          // CLIENT-SIDE INTERRUPTION DETECTION - DISABLED
+          // The client-side interruption detection was causing false positives and breaking conversation flow
+          // The API has built-in VAD (Voice Activity Detection) that handles interruptions more reliably
+          // We're letting the API manage turn-taking instead of trying to detect it ourselves
+          
+          // Log audio levels for debugging (can be removed later)
+          if (CLIENT_SIDE_INTERRUPTION_ENABLED) {
+            const now = Date.now()
+            const aiHasBeenSpeakingLongEnough = aiStartedSpeakingTimeRef.current > 0 && 
+                                               (now - aiStartedSpeakingTimeRef.current) > MIN_AI_SPEAKING_TIME_MS
+            
+            // Only detect interruption if:
+            // 1. AI is actively playing audio
+            // 2. User audio level exceeds threshold
+            // 3. AI has been speaking for minimum time (prevents false positives right after AI starts)
+            // 4. Not in cooldown period
+            if (isPlayingRef.current && maxAmplitude > audioLevelThreshold && aiHasBeenSpeakingLongEnough) {
+              consecutiveSpeechFramesRef.current++
+              
+              // Trigger interruption if user has been speaking for enough consecutive frames
+              // and we're not in cooldown period
+              if (consecutiveSpeechFramesRef.current >= INTERRUPTION_FRAMES_THRESHOLD &&
+                  (now - lastInterruptionTimeRef.current) > INTERRUPTION_COOLDOWN_MS) {
+                console.log('[VoiceSession] 🛑 User interruption detected - stopping AI speech', {
+                  frames: consecutiveSpeechFramesRef.current,
+                  amplitude: maxAmplitude.toFixed(4),
+                  aiSpeakingTime: now - aiStartedSpeakingTimeRef.current
+                })
+                // #region agent log
+                fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:1052',message:'Client-side interruption detected',data:{sessionId,frames:consecutiveSpeechFramesRef.current,amplitude:maxAmplitude},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'O'})}).catch(()=>{});
+                // #endregion
+                userSpeechDetectedRef.current = true
+                lastInterruptionTimeRef.current = now
+                
+                // Immediately stop AI audio playback
+                stopAllAudio(true)
+                
+                // Clear AI transcription buffer since it was interrupted
+                if (aiTranscriptionTimeoutRef.current) {
+                  clearTimeout(aiTranscriptionTimeoutRef.current)
+                  aiTranscriptionTimeoutRef.current = null
+                }
+                // Keep partial transcription but mark as interrupted
+                if (aiTranscriptionBufferRef.current) {
+                  // Mark the streaming message as complete (interrupted)
+                  onMessageStream?.({
+                    speaker: 'ai-coach',
+                    message: aiTranscriptionBufferRef.current,
+                    isComplete: true,
+                  })
+                  aiTranscriptionBufferRef.current = ''
+                }
+                
+                // Send interruption signal to API
+                try {
+                  if (sessionRef.current && isSessionOpenRef.current) {
+                    sessionRef.current.sendClientContent({
+                      turns: [{
+                        role: 'user',
+                        parts: [{ text: '[INTERRUPTED]' }]
+                      }]
+                    })
+                  }
+                } catch (error) {
+                  console.error('[VoiceSession] Error sending interruption signal:', error)
+                }
+              }
+            } else {
+              // Reset counter if no speech detected or conditions not met
+              if (maxAmplitude <= audioLevelThreshold || !isPlayingRef.current || !aiHasBeenSpeakingLongEnough) {
+                consecutiveSpeechFramesRef.current = 0
+              }
+              if (!isPlayingRef.current) {
+                userSpeechDetectedRef.current = false
+                aiStartedSpeakingTimeRef.current = 0 // Reset when AI stops
+              }
+            }
+          } else {
+            // Reset refs when disabled
+            consecutiveSpeechFramesRef.current = 0
+            if (!isPlayingRef.current) {
+              userSpeechDetectedRef.current = false
+              aiStartedSpeakingTimeRef.current = 0
+            }
+          }
+          
           const pcm16 = new Int16Array(inputBuffer.length)
 
           // Convert float32 to int16 PCM
@@ -909,11 +1395,15 @@ GENERAL RULES:
       setTimeout(() => {
         if (!isComponentMounted) {
           hasInitializedRef.current = false
-          globalSessionLock = false
+          // Only reset global lock if this instance owned it
+          if (globalSessionInstance === sessionRef.current) {
+            globalSessionLock = false
+            globalSessionInstance = null
+          }
         }
       }, 100)
     }
-  }, [stopAllAudio]) // Include stopAllAudio in deps
+  }, [sessionId, stopAllAudio, hasExistingTurns]) // Re-run when sessionId changes to reinitialize for new session
 
   // ============================================================================
   // TURN MANAGEMENT
@@ -1080,17 +1570,41 @@ GENERAL RULES:
   const handleAssessmentSubmit = async (selectedOptionId: string) => {
     if (!currentAssessment || !sessionRef.current) return
 
+    // Save assessment data before making API call
+    // This ensures we can still send message to AI even if API fails
+    let data = { isCorrect: false, feedback: '', score: 0 }
+    let apiError = false
+
     try {
+      // Include assessment data for dynamic assessments (ID starts with "dynamic-")
+      const isDynamic = currentAssessment.id?.startsWith('dynamic-')
+      const requestBody: any = { answer: selectedOptionId }
+      if (isDynamic) {
+        requestBody.assessment = currentAssessment
+      }
+
       const response = await fetch(`/api/sessions/${sessionId}/assessments/${currentAssessment.id}/answer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ answer: selectedOptionId }),
+        body: JSON.stringify(requestBody),
       })
 
-      if (!response.ok) throw new Error('Failed to save answer')
+      if (!response.ok) {
+        console.error('[VoiceSession] ⚠️ Assessment API error:', response.status, response.statusText)
+        apiError = true
+        // Continue even if API fails - we'll still send message to AI
+      } else {
+        data = await response.json()
+      }
+    } catch (error) {
+      console.error('[VoiceSession] ⚠️ Assessment API call failed:', error)
+      apiError = true
+      // Continue even if API fails
+    }
 
-      const data = await response.json()
-
+    // Even if API fails, we still process the assessment submission
+    // This ensures the conversation continues smoothly
+    try {
       // Get selected option text
       const selectedOption = currentAssessment.options?.find((opt: any, idx: number) => {
         const optId = typeof opt === 'string' ? `opt-${idx}` : opt.id || `opt-${idx}`
@@ -1138,102 +1652,137 @@ GENERAL RULES:
         return
       }
 
-      // Send to Live API - use sendClientContent to send text message
-      // The key is to send the text message, then immediately send audio input
-      // to trigger the API to process and respond
+      // Send to Live API - use sendClientContent with COMPLETE turns structure
+      // CRITICAL: sendClientContent with model turns should trigger immediate response
       console.log('[VoiceSession] 📡 Sending assessment message to Gemini Live API...')
       console.log('[VoiceSession] Message content:', assessmentMessage.substring(0, 200) + '...')
 
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:1590',message:'BEFORE sendClientContent - checking session state',data:{sessionId,hasSessionRef:!!sessionRef.current,isSessionOpen:isSessionOpenRef.current,isMicMuted:isMicMutedRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C'})}).catch(()=>{});
+      // #endregion
+
       try {
-        // Step 1: Send the text message via sendClientContent
-        // This adds the message to the conversation context
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:1607',message:'BEFORE sendClientContent call - about to send',data:{sessionId,hasSessionRef:!!sessionRef.current,isSessionOpen:isSessionOpenRef.current,messageLength:assessmentMessage.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B'})}).catch(()=>{});
+        // #endregion
+
+        // CRITICAL: The Live API with audio VAD active will NOT respond to text-only sendClientContent.
+        // Solution: Temporarily disconnect the audio processor so the API switches to text-only mode.
+        console.log('[VoiceSession] 🛑 Temporarily disconnecting audio processor for text-only turn...')
+        
+        // Disconnect the processor to stop audio input
+        if (processorRef.current) {
+          processorRef.current.disconnect()
+        }
+        
+        // Wait for audio to fully stop
+        await new Promise(resolve => setTimeout(resolve, 200))
+        
+        // Send the assessment message as text WITH turnComplete
+        console.log('[VoiceSession] 🔔 Sending assessment message with turnComplete in single call...')
         sessionRef.current.sendClientContent({
           turns: [{
             role: 'user',
             parts: [{ text: assessmentMessage }]
-          }]
+          }],
+          turnComplete: true  // CRITICAL: Must be in the same call as turns
         })
-        console.log('[VoiceSession] ✅ Text message sent via sendClientContent')
-
-        // Step 2: Send silence chunks over time to signal end of turn
-        // The API needs to detect silence to know the user has finished speaking
-        // Send multiple smaller chunks to simulate natural speech ending
-        const sampleRate = 16000
-        const chunkDuration = 0.5 // 0.5 seconds per chunk
-        const totalChunks = 6 // 3 seconds total (6 chunks × 0.5s)
-        const samplesPerChunk = Math.floor(chunkDuration * sampleRate)
-
-        // Send silence chunks with small delays between them
-        // This simulates natural speech patterns where silence builds up
-        for (let i = 0; i < totalChunks; i++) {
-          await new Promise(resolve => setTimeout(resolve, i === 0 ? 150 : 100))
-
-          const silenceBuffer = new Int16Array(samplesPerChunk).fill(0)
-          const uint8Array = new Uint8Array(silenceBuffer.buffer)
-          const base64Silence = btoa(String.fromCharCode.apply(null, Array.from(uint8Array)))
-
-          sessionRef.current.sendRealtimeInput({
-            audio: {
-              data: base64Silence,
-              mimeType: "audio/pcm;rate=16000"
+        console.log('[VoiceSession] ✅ Assessment message + turnComplete sent successfully')
+        
+        // Reconnect the audio processor after a brief delay
+        setTimeout(() => {
+          if (processorRef.current && audioContextRef.current) {
+            console.log('[VoiceSession] 🔌 Reconnecting audio processor...')
+            try {
+              processorRef.current.connect(audioContextRef.current.destination)
+            } catch (e) {
+              // Already connected, ignore
             }
-          })
-
-          if (i === 0) {
-            console.log('[VoiceSession] ✅ Started sending silence chunks to signal end of turn...')
           }
-        }
-        console.log('[VoiceSession] ✅ Sent 3s of silence in chunks - AI should respond now')
-        console.log('[VoiceSession] ⏳ Waiting for AI to process and respond...')
+        }, 500)
+
+        console.log('[VoiceSession] ✅ Assessment message sent + turnComplete signaled (AI generation should start now)')
+        console.log('[VoiceSession] 📊 Session state - isSessionOpen:', isSessionOpenRef.current, 'hasSessionRef:', !!sessionRef.current, 'isMicMuted:', isMicMutedRef.current)
+
+        // Mark assessment submission time
+        assessmentSubmissionTimeRef.current = Date.now()
+
+        // Mute mic immediately so AI can speak without interruption
+        // The mic will be unmuted automatically when AI finishes speaking
+        setIsMicMuted(true)
+        isMicMutedRef.current = true
+        setIsListening(false)
+        setIsSpeaking(true) // AI will be speaking soon
+        onVoiceStateChange?.({
+          isListening: false,
+          isSpeaking: true,
+          isConnected: isSessionOpenRef.current,
+          isMicMuted: true,
+        })
+        
+        console.log('[VoiceSession] 🔇 Mic muted - waiting for AI response')
       } catch (error: any) {
         console.error('[VoiceSession] ❌ Error sending message to AI:', error)
         toast.error('Failed to send message to AI', {
           description: error.message || 'Please try again'
         })
+        // Still clear assessment and continue
+        setCurrentAssessment(null)
+        currentAssessmentRef.current = null
+        onAssessmentStateChange?.(null)
+        // Mute mic so AI can speak if it responds
+        setIsListening(false)
+        setIsSpeaking(true)
+        setIsMicMuted(true)
+        isMicMutedRef.current = true
+        onVoiceStateChange?.({
+          isListening: false,
+          isSpeaking: true,
+          isConnected: true,
+          isMicMuted: true,
+        })
         return
       }
 
-      // Show toast
-      if (data.isCorrect) {
+      // Show toast based on result
+      if (apiError) {
+        toast.warning('Assessment not saved', { description: 'But continuing conversation...' })
+      } else if (data.isCorrect) {
         toast.success('Correct!', { description: 'AI is responding...' })
       } else {
         toast.info('Answer submitted', { description: 'AI is providing feedback...' })
       }
 
-      // Clear assessment UI (but keep ref until AI responds)
+      // Clear assessment UI immediately
       setCurrentAssessment(null)
-      // Note: Keep currentAssessmentRef.current set until AI finishes responding
-      // This ensures mic stays muted during AI feedback
+      currentAssessmentRef.current = null
       onAssessmentStateChange?.(null)
 
-      // Set state to wait for AI response (not listening yet, AI will speak)
-      // Mic is already muted from assessment trigger, keep it muted during AI response
-      setIsListening(false) // AI will respond, so we're not listening to user yet
-      setIsSpeaking(false)  // Will become true when AI starts speaking
-
-      onVoiceStateChange?.({
-        isListening: false, // Will become true after AI finishes speaking
-        isSpeaking: false,  // Will become true when AI response arrives
-        isConnected: true,
-        isMicMuted: true, // Keep mic muted until AI finishes feedback
-      })
-
-      console.log('[VoiceSession] ⏳ Waiting for AI to respond to assessment submission...')
-
+      // Mic is muted immediately above so the AI can speak without interruption.
+      console.log('[VoiceSession] ✅ Assessment submitted - waiting for AI response')
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:1672',message:'Assessment submitted with turnComplete',data:{sessionId,isMicMuted:false,isListening:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'K'})}).catch(()=>{});
+      // #endregion
     } catch (error) {
-      console.error('[VoiceSession] Error submitting assessment:', error)
-      toast.error('Failed to submit answer')
+      console.error('[VoiceSession] ❌ Unexpected error in handleAssessmentSubmit:', error)
+      toast.error('Error submitting assessment', {
+        description: 'Please try speaking your answer instead'
+      })
 
       setCurrentAssessment(null)
       currentAssessmentRef.current = null
       onAssessmentStateChange?.(null)
-      setIsListening(true)
+      // Mute mic so AI can speak if it responds despite the error
+      setIsListening(false)
+      setIsSpeaking(true)
+      setIsMicMuted(true)
+      isMicMutedRef.current = true
 
       onVoiceStateChange?.({
-        isListening: true,
-        isSpeaking: false,
+        isListening: false,
+        isSpeaking: true,
         isConnected: true,
-        isMicMuted: isMicMuted,
+        isMicMuted: true,
       })
     }
   }
@@ -1280,6 +1829,9 @@ GENERAL RULES:
   const handleEndSession = useCallback(async () => {
     try {
       console.log('[VoiceSession] Ending session...')
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/40ecd592-1d57-4d23-8901-eda4b8c4fdad',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VoiceSession.tsx:1404',message:'handleEndSession called',data:{sessionId,hasSession:!!sessionRef.current,globalSessionLock,globalInstance:!!globalSessionInstance},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
 
       stopAllAudio()
 
@@ -1308,6 +1860,14 @@ GENERAL RULES:
         sessionRef.current = null
       }
 
+      // Reset global state to allow new session initialization
+      hasInitializedRef.current = false
+      if (globalSessionInstance === sessionRef.current || !globalSessionInstance) {
+        globalSessionLock = false
+        globalSessionInstance = null
+        console.log('[VoiceSession] Reset global session state')
+      }
+
       setIsConnected(false)
       setIsListening(false)
       setIsSpeaking(false)
@@ -1316,10 +1876,16 @@ GENERAL RULES:
       onSessionEnd?.()
     } catch (error) {
       console.error('[VoiceSession] Error ending session:', error)
+      // Reset global state even on error
+      hasInitializedRef.current = false
+      if (globalSessionInstance === sessionRef.current || !globalSessionInstance) {
+        globalSessionLock = false
+        globalSessionInstance = null
+      }
       setIsConnected(false)
       onSessionEnd?.()
     }
-  }, [onSessionEnd, stopAllAudio])
+  }, [onSessionEnd, stopAllAudio, sessionId])
 
   useEffect(() => {
     if (onEndSessionRef) {

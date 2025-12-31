@@ -1,10 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
+import { generateDynamicAssessment } from '@/lib/services/sessions/dynamicAssessmentService'
 import { NextResponse } from 'next/server'
 
 /**
  * GET /api/sessions/[sessionId]/assessments/direct
  * Get assessments directly for a session (bypass trigger logic)
  * Used when agent explicitly wants to show an assessment
+ * 
+ * Now generates dynamic assessments based on conversation context
  */
 export async function GET(
   request: Request,
@@ -25,7 +28,7 @@ export async function GET(
     // Verify session belongs to user
     const { data: session } = await supabase
       .from('sessions')
-      .select('scenario_id')
+      .select('scenario_id, scenarios(title)')
       .eq('id', sessionId)
       .eq('user_id', user.id)
       .single()
@@ -34,7 +37,36 @@ export async function GET(
       return NextResponse.json({ error: 'Session not found' }, { status: 404 })
     }
 
-    // Get all assessments for this scenario
+    // PRIORITY 1: Generate dynamic assessment based on conversation context
+    const scenarioTitle = (session.scenarios as any)?.title
+    const dynamicAssessment = await generateDynamicAssessment(sessionId, scenarioTitle)
+
+    if (dynamicAssessment) {
+      console.log('[Assessment Direct] ✅ Generated dynamic assessment based on conversation')
+      
+      // Format as expected by the frontend (matching scenario_assessments structure)
+      const formattedAssessment = {
+        id: `dynamic-${Date.now()}`, // Temporary ID for dynamic assessments
+        scenario_id: session.scenario_id,
+        question_text: dynamicAssessment.question_text,
+        question_type: dynamicAssessment.question_type,
+        options: dynamicAssessment.options,
+        correct_answer: dynamicAssessment.correct_answer,
+        explanation: dynamicAssessment.explanation || '',
+        points: 1,
+        order_index: 0,
+        is_dynamic: true, // Flag to indicate this is dynamically generated
+      }
+
+      return NextResponse.json({
+        assessments: [formattedAssessment],
+        count: 1,
+      })
+    }
+
+    // FALLBACK: Use pre-defined assessments if dynamic generation fails
+    console.log('[Assessment Direct] ⚠️ Dynamic generation failed, falling back to pre-defined assessments')
+    
     const { data: allAssessments, error: assessmentError } = await supabase
       .from('scenario_assessments')
       .select('*')

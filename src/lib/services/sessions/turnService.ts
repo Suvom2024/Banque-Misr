@@ -17,8 +17,12 @@ export interface TurnData {
 
 /**
  * Save a conversation turn to the database
+ * Optionally triggers AI analysis for user turns
  */
-export async function saveTurn(turn: TurnData): Promise<string | null> {
+export async function saveTurn(
+  turn: TurnData,
+  options?: { triggerAIAnalysis?: boolean; conversationContext?: Array<{ speaker: string; message: string }> }
+): Promise<string | null> {
   const supabase = await createClient()
 
   const { data, error } = await supabase
@@ -39,7 +43,35 @@ export async function saveTurn(turn: TurnData): Promise<string | null> {
     return null
   }
 
+  // Trigger AI analysis for user turns (asynchronously, don't wait)
+  if (options?.triggerAIAnalysis && turn.speaker === 'user') {
+    // Don't await - let it run in background
+    analyzeTurnAsync(data.id, turn.sessionId, turn.speaker, turn.message, options.conversationContext).catch(
+      (err) => {
+        console.error('[TurnService] Failed to trigger AI analysis:', err)
+      }
+    )
+  }
+
   return data.id
+}
+
+/**
+ * Trigger AI analysis asynchronously (non-blocking)
+ */
+async function analyzeTurnAsync(
+  turnId: string,
+  sessionId: string,
+  speaker: 'user' | 'ai-coach' | 'client' | 'system',
+  message: string,
+  conversationContext?: Array<{ speaker: string; message: string }>
+): Promise<void> {
+  try {
+    const { analyzeTurn } = await import('./turnAnalysisService')
+    await analyzeTurn(turnId, sessionId, speaker, message, conversationContext)
+  } catch (error) {
+    console.error('[TurnService] Error in async AI analysis:', error)
+  }
 }
 
 /**

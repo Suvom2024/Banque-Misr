@@ -108,15 +108,17 @@ export async function getSessionReview(
     ? calculateDuration(session.started_at, session.completed_at)
     : 'N/A'
 
-  // Format competencies with score types
-  const formattedCompetencies = (competencies || []).map((c) => ({
-    id: c.id,
-    name: c.competency_name,
-    subtitle: getCompetencySubtitle(c.competency_name),
-    score: c.score || 0,
-    feedback: c.feedback,
-    scoreType: getScoreType(c.score || 0),
-  }))
+  // Format competencies with score types (using dynamic thresholds)
+  const formattedCompetencies = await Promise.all(
+    (competencies || []).map(async (c) => ({
+      id: c.id,
+      name: c.competency_name,
+      subtitle: getCompetencySubtitle(c.competency_name),
+      score: c.score || 0,
+      feedback: c.feedback,
+      scoreType: await getScoreType(c.score || 0, userId),
+    }))
+  )
 
   // Format transcript
   const transcript = (turns || []).map((turn) => ({
@@ -184,9 +186,24 @@ function getCompetencySubtitle(competencyName: string): string {
 }
 
 /**
- * Get score type based on score
+ * Get score type based on score using dynamic user thresholds
  */
-function getScoreType(score: number): 'green' | 'yellow' | 'red' {
+async function getScoreType(score: number, userId?: string): Promise<'green' | 'yellow' | 'red'> {
+  // If userId provided, use dynamic thresholds
+  if (userId) {
+    try {
+      const { getUserThresholds } = await import('./dynamicThresholdService')
+      const thresholds = await getUserThresholds(userId)
+      
+      if (score >= thresholds.good) return 'green'
+      if (score >= thresholds.fair) return 'yellow'
+      return 'red'
+    } catch (error) {
+      console.error('[SessionReview] Error getting dynamic thresholds, using defaults:', error)
+    }
+  }
+
+  // Fallback to default thresholds
   if (score >= 80) return 'green'
   if (score >= 70) return 'yellow'
   return 'red'
@@ -236,8 +253,10 @@ async function generateAICoachingRecommendations(
 ): Promise<Array<{ id: string; title: string; description: string; priority: number }>> {
   const recommendations: Array<{ id: string; title: string; description: string; priority: number }> = []
 
-  // Find competencies that need improvement
-  const weakCompetencies = competencies.filter((c) => (c.score || 0) < 75).slice(0, 3)
+  // Find competencies that need improvement using dynamic threshold
+  const { getUserThresholds } = await import('./dynamicThresholdService')
+  const thresholds = await getUserThresholds(userId)
+  const weakCompetencies = competencies.filter((c) => (c.score || 0) < thresholds.weakCompetency).slice(0, 3)
 
   weakCompetencies.forEach((competency, index) => {
     recommendations.push({

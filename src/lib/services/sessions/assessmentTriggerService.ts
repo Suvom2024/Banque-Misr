@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getSessionTurns } from './turnService'
+import { getUserThresholds } from './dynamicThresholdService'
+import { getTurnAnalysis } from './turnAnalysisService'
 
 export interface AssessmentTriggerResult {
   shouldTrigger: boolean
@@ -9,15 +11,32 @@ export interface AssessmentTriggerResult {
 
 /**
  * Agentic logic to determine if assessment should be triggered
- * Triggers after N interactions (default: 3-5 turns)
- * Also considers conversation quality and user performance
+ * Uses dynamic thresholds based on user's performance history
+ * Uses AI-generated metrics from turn analysis
  */
 export async function shouldTriggerAssessment(
   sessionId: string,
-  minTurns: number = 3,
-  maxTurns: number = 5
+  userId: string,
+  minTurns?: number,
+  maxTurns?: number
 ): Promise<AssessmentTriggerResult> {
   const supabase = await createClient()
+
+  // Get dynamic thresholds for this user
+  const thresholds = await getUserThresholds(userId)
+  
+  // Get default config values if minTurns/maxTurns not provided
+  const { data: config } = await supabase
+    .from('performance_analysis_config')
+    .select('config_value')
+    .eq('config_key', 'assessment_trigger')
+    .eq('is_active', true)
+    .single()
+
+  const defaultConfig = config?.config_value as any
+  const effectiveMinTurns = minTurns ?? defaultConfig?.min_turns ?? 3
+  const effectiveMaxTurns = maxTurns ?? defaultConfig?.max_turns ?? 5
+  const recentTurnsAnalyzed = defaultConfig?.recent_turns_analyzed ?? 3
 
   // Get current turns
   const turns = await getSessionTurns(sessionId)
@@ -25,12 +44,12 @@ export async function shouldTriggerAssessment(
   const totalTurns = turns.length
 
   // Rule 1: Minimum turns check
-  if (userTurns.length < minTurns) {
+  if (userTurns.length < effectiveMinTurns) {
     return { shouldTrigger: false, reason: 'Not enough interactions yet' }
   }
 
   // Rule 2: Maximum turns check (don't wait too long)
-  if (userTurns.length >= maxTurns) {
+  if (userTurns.length >= effectiveMaxTurns) {
     // Get scenario to find assessment questions
     const { data: session } = await supabase
       .from('sessions')
@@ -54,13 +73,17 @@ export async function shouldTriggerAssessment(
     }
   }
 
-  // Rule 3: Quality-based trigger (if user is doing well, test knowledge)
-  if (userTurns.length >= minTurns) {
-    const recentTurns = userTurns.slice(-3) // Last 3 user turns
-    const avgMetrics = calculateAverageMetrics(recentTurns)
+  // Rule 3: Quality-based trigger using AI-generated metrics and dynamic thresholds
+  if (userTurns.length >= effectiveMinTurns) {
+    const recentUserTurns = userTurns.slice(-recentTurnsAnalyzed)
+    const avgMetrics = await calculateAverageMetricsFromAI(recentUserTurns)
 
-    // If user is performing well (high clarity, empathy, etc.), trigger assessment
-    if (avgMetrics.clarity > 80 && avgMetrics.empathy > 70) {
+    // Use dynamic thresholds instead of hardcoded values
+    const clarityThreshold = thresholds.assessmentTriggerClarity
+    const empathyThreshold = thresholds.assessmentTriggerEmpathy
+
+    // If user is performing well according to their own thresholds, trigger assessment
+    if (avgMetrics.clarity > clarityThreshold && avgMetrics.empathy > empathyThreshold) {
       const { data: session } = await supabase
         .from('sessions')
         .select('scenario_id')
@@ -77,7 +100,7 @@ export async function shouldTriggerAssessment(
 
         return {
           shouldTrigger: true,
-          reason: 'User demonstrating strong performance - testing knowledge',
+          reason: `User demonstrating strong performance (clarity: ${avgMetrics.clarity.toFixed(1)} > ${clarityThreshold}, empathy: ${avgMetrics.empathy.toFixed(1)} > ${empathyThreshold}) - testing knowledge`,
           assessmentId: assessment?.id,
         }
       }
@@ -88,9 +111,10 @@ export async function shouldTriggerAssessment(
 }
 
 /**
- * Calculate average metrics from turns
+ * Calculate average metrics from AI-generated turn analyses
+ * Falls back to turn.metrics if AI analysis not available
  */
-function calculateAverageMetrics(turns: Array<{ metrics?: any }>) {
+async function calculateAverageMetricsFromAI(turns: Array<{ id?: string; metrics?: any }>) {
   const metrics = {
     clarity: 0,
     empathy: 0,
@@ -100,18 +124,32 @@ function calculateAverageMetrics(turns: Array<{ metrics?: any }>) {
 
   let count = 0
   for (const turn of turns) {
+    // Try to get AI analysis first
+    if (turn.id) {
+      const aiAnalysis = await getTurnAnalysis(turn.id)
+      if (aiAnalysis && aiAnalysis.metrics) {
+        metrics.clarity += aiAnalysis.metrics.clarity
+        metrics.empathy += aiAnalysis.metrics.empathy
+        metrics.directness += aiAnalysis.metrics.directness
+        metrics.pacing += aiAnalysis.metrics.pacing
+        count++
+        continue
+      }
+    }
+
+    // Fallback to turn.metrics if AI analysis not available
     if (turn.metrics) {
-      if (turn.metrics.clarity) {
+      if (turn.metrics.clarity !== undefined) {
         metrics.clarity += turn.metrics.clarity
         count++
       }
-      if (turn.metrics.empathy) {
+      if (turn.metrics.empathy !== undefined) {
         metrics.empathy += turn.metrics.empathy
       }
-      if (turn.metrics.directness) {
+      if (turn.metrics.directness !== undefined) {
         metrics.directness += turn.metrics.directness
       }
-      if (turn.metrics.pacing) {
+      if (turn.metrics.pacing !== undefined) {
         metrics.pacing += turn.metrics.pacing
       }
     }

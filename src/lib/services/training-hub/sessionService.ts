@@ -24,18 +24,23 @@ export async function createSession(
   const supabase = await createClient()
 
   // Check if there's an existing in-progress session for this scenario
+  // But only reuse if it was created recently (within last 5 minutes)
+  // This prevents reusing old sessions while allowing quick restarts
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
   const { data: existingSession } = await supabase
     .from('sessions')
-    .select('id, status')
+    .select('id, status, created_at')
     .eq('user_id', userId)
     .eq('scenario_id', scenarioId)
     .eq('status', 'in-progress')
+    .gte('created_at', fiveMinutesAgo) // Only reuse if created within last 5 minutes
     .order('created_at', { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
 
   if (existingSession) {
     // Return existing session instead of creating a new one
+    // But only if it's recent (within 5 minutes)
     return getSessionById(existingSession.id, userId)
   }
 

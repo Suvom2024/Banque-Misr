@@ -2,9 +2,28 @@ import { createClient } from '@/lib/supabase/server'
 import type { UserPerformance, PerformanceRating, TrendDataPoint, TopCompetency } from '@/types/dashboard'
 
 /**
- * Calculate performance rating from score
+ * Calculate performance rating from score using dynamic user thresholds
  */
-export function calculatePerformanceRating(score: number): PerformanceRating {
+export async function calculatePerformanceRating(
+  score: number,
+  userId?: string
+): Promise<PerformanceRating> {
+  // If userId provided, use dynamic thresholds
+  if (userId) {
+    try {
+      const { getUserThresholds } = await import('../sessions/dynamicThresholdService')
+      const thresholds = await getUserThresholds(userId)
+      
+      if (score >= thresholds.excellent) return 'EXCELLENT'
+      if (score >= thresholds.good) return 'GOOD'
+      if (score >= thresholds.fair) return 'FAIR'
+      return 'NEEDS_IMPROVEMENT'
+    } catch (error) {
+      console.error('[PerformanceService] Error getting dynamic thresholds, using defaults:', error)
+    }
+  }
+
+  // Fallback to default thresholds
   if (score >= 90) return 'EXCELLENT'
   if (score >= 80) return 'GOOD'
   if (score >= 70) return 'FAIR'
@@ -162,7 +181,7 @@ export async function getUserOverallPerformance(
 
   return {
     performanceScore: Math.round(avgScore),
-    performanceRating: calculatePerformanceRating(avgScore),
+    performanceRating: await calculatePerformanceRating(avgScore, userId),
     timeTrained: formatTimeTrained(totalHours),
     timeTrainedChange: `${timeChange > 0 ? '+' : ''}${timeChange.toFixed(1)}%`,
     keyStrength,
